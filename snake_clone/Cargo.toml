@@ -1,0 +1,13 @@
+[package]
+name = "snake_game"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "*"
+derive_is_enum_variant = "*"
+
+[dependencies.sdl2]
+version = "*"
+default-features = false
+features = ["image"]
