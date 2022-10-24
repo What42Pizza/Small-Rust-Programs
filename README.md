@@ -1,6 +1,6 @@
-# My Rust Games
+# Small Rust Programs
 
-This is a collection of the rust games that I've made so far.
+This is just a collection of smaller rust programs that I've made
 
 As far as I can remember, this is the order that I made these in:
 - tick-tack-toe
