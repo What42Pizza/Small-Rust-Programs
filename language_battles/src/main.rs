@@ -1,13 +1,5 @@
 // Started 12/09/22
-
-
-
-// default rust
-#![allow(unused)]
-#![warn(unused_must_use)]
-
-// nightly features
-//#![feature(box_syntax)]
+// Last updated 12/10/22
 
 
 
@@ -15,11 +7,31 @@ mod fns;
 
 
 
-use std::{fs, error::Error};
+use std::{fs, error::Error, io};
 
 
 
 fn main() -> Result<(), Box<dyn Error>> {
+    loop {
+        println!("Calculate results?");
+        match &*get_string()? {
+            "y" | "yes" | "1" => {
+                calculate_totals()?;
+            }
+            "n" | "no" | "0" => {
+                return Ok(());
+            }
+            _ => {
+                println!("Unknown input, exiting program.");
+                return Ok(());
+            }
+        }
+    }
+}
+
+
+
+fn calculate_totals() -> Result<(), Box<dyn Error>> {
 
     // get input
     let mut input_path = fns::get_program_dir();
@@ -57,7 +69,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // get mutlipliers
     let mut multipliers = vec!();
-    for mut points in all_points_1.iter_mut() {
+    for points in all_points_1.iter_mut() {
         multipliers.push(points.remove(0));
     }
 
@@ -75,9 +87,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             *point *= multipliers[i];
         }
     }
-    //for (i, points) in all_points_2.iter().enumerate() {
-    //    println!("{}: {points:?}", langs[i]);
-    //}
 
     // sum & sort
     let mut lang_totals = all_points_2.into_iter().enumerate()
@@ -85,12 +94,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         .collect::<Vec<(&str, i32)>>();
     lang_totals.sort_by(|a, b| a.1.cmp(&b.1).reverse());
 
-    for lang in lang_totals.iter() {
+    // print
+    for (i, lang) in lang_totals.iter().enumerate() {
         print!(
-            "{name:name_width$}{total:total_width$}  ",
+            "{index:index_width$}:  {name:name_width$}{total:total_width$}  ",
+            index = i + 1,
             name = lang.0.to_string() + ":",
             total = lang.1,
-            name_width = 6,
+            index_width = 2,
+            name_width = 7,
             total_width = 3,
         );
         let mut bar_string = String::new();
@@ -101,4 +113,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
     
+}
+
+
+
+
+
+pub fn get_string() -> Result<String, Box<dyn Error>> {
+    let mut input_string = String::new();
+    io::stdin().read_line(&mut input_string)?;
+    input_string = input_string[..input_string.len()-2].to_string();
+    Ok(input_string)
 }
