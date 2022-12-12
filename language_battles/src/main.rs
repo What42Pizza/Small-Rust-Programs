@@ -35,9 +35,15 @@ fn calculate_totals() -> Result<(), Box<dyn Error>> {
 
     // get input
     let mut input_path = fns::get_program_dir();
-    input_path.push("input/Language Battles Input.txt");
+    input_path.push("Input.txt");
     let input = fs::read_to_string(input_path)?;
-    let input = fns::split_string_lines(&input);
+    let input = fns::split_string_lines(&input).into_iter()
+        .filter_map(|mut s| {
+            s = s.trim().to_string();
+            if s.starts_with("//") || s.is_empty() {return None;}
+            Some(s)
+        })
+        .collect::<Vec<String>>();
 
     // get langs
     let mut count = 0;
