@@ -1,5 +1,5 @@
 // Started 12/09/22
-// Last updated 12/10/22
+// Last updated 12/13/22
 
 
 
@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     loop {
         println!("Calculate results?");
         match &*get_string()? {
-            "y" | "yes" | "1" => {
+            "y" | "yes" | "1" | "" => {
                 calculate_totals()?;
             }
             "n" | "no" | "0" => {
