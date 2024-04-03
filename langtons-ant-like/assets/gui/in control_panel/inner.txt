@@ -1,0 +1,9 @@
+x: 0.0
+y: 0.01
+width: 1.0
+height: 0.98
+natural x: 0.01
+natural width: -0.02
+
+has background: true
+background color: F0F0F0

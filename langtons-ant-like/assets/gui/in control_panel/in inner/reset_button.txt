@@ -1,0 +1,14 @@
+x: 0.0
+y: 0.03
+width: 1.0
+height: 0.1
+natural x: 0.03
+natural width: -0.06
+
+has background: true
+background color: B0B0B0
+
+has text: true
+text: Reset
+
+darken while pressed: true

@@ -7,3 +7,7 @@ As far as I can remember, this is the order that I made these in:
 - minesweeper clone
 - snake clone
 - stacker clone
+
+oh dang I've made a lot more than that
+
+well I just made clean-all-targets

@@ -1,0 +1,9 @@
+[package]
+name = "clear-all-targets"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.81"
+smart-read = "0.4.1"
+walkdir = "2.5.0"
