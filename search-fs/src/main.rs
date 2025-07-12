@@ -3,6 +3,7 @@
 
 
 #![feature(let_chains)]
+#![allow(static_mut_refs)]
 
 
 
@@ -15,17 +16,29 @@ use std::{result::Result as StdResult, sync::atomic::{AtomicUsize, Ordering}, ti
 
 fn main() -> Result<()> {
 	
+	static mut COUNT: AtomicUsize = AtomicUsize::new(0);
+	static mut PATTERN: String = String::new();
+	static mut PATTERN_BYTES: &[u8] = &[];
+	
+	#[cfg(target_os="windows")]
 	let top_folder = prompt!("Starting folder: "; ["C:/"]);
+	#[cfg(target_os="linux")]
+	let top_folder = prompt!("Starting folder: "; ["/"]);
 	let pattern = prompt!("Search string: ");
 	let ignore_errors = prompt!("Ignore errors? "; [true] YesNoInput);
 	
+	unsafe {
+		PATTERN = pattern;
+		PATTERN_BYTES = PATTERN.as_bytes();
+	}
+	let pattern_len = unsafe { PATTERN_BYTES.len() };
+	
 	let start_time = Instant::now();
-	let i = AtomicUsize::new(0);
 	let _ = WalkDir::new(top_folder)
-		.process_read_dir(move |_depth, _path, _read_state, children| {
+		.process_read_dir(move |_depth, _path, _read_state, children| { unsafe {
 			for child in children {
 				
-				let count = i.fetch_add(1, Ordering::Relaxed);
+				let count = COUNT.fetch_add(1, Ordering::Relaxed);
 				let path = match child {
 					StdResult::Ok(v) => v,
 					StdResult::Err(err) => {
@@ -34,7 +47,8 @@ fn main() -> Result<()> {
 					}
 				}.path();
 				let Some(name) = path.file_name() else {continue;};
-				if name.to_string_lossy().find(&pattern).is_some() {
+				let name_bytes = name.as_encoded_bytes();
+				if name_bytes.windows(pattern_len).any(|window| window == PATTERN_BYTES) {
 					println!("Found item: {path:?}");
 				}
 				if count % 10000 == 0 {
@@ -42,7 +56,7 @@ fn main() -> Result<()> {
 				}
 				
 			}
-		}).into_iter().collect::<Vec<_>>();
+		}}).into_iter().collect::<Vec<_>>();
 	
 	println!("Finished in {:?}", start_time.elapsed());
 	
