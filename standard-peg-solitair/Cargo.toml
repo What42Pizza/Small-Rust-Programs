@@ -1,0 +1,10 @@
+[package]
+name = "jumping-square"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+unroll = "0.1.5"
+
+[profile.release]
+opt-level = 3
