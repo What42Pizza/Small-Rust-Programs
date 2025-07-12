@@ -34,29 +34,29 @@ fn main() -> Result<()> {
 	let pattern_len = unsafe { PATTERN_BYTES.len() };
 	
 	let start_time = Instant::now();
-	let _ = WalkDir::new(top_folder)
+	let walk_dir = WalkDir::new(top_folder)
 		.process_read_dir(move |_depth, _path, _read_state, children| { unsafe {
 			for child in children {
 				
 				let count = COUNT.fetch_add(1, Ordering::Relaxed);
-				let path = match child {
+				let child = match child {
 					StdResult::Ok(v) => v,
 					StdResult::Err(err) => {
 						if !ignore_errors {println!("Error while searching: {err}");}
 						return;
 					}
-				}.path();
-				let Some(name) = path.file_name() else {continue;};
-				let name_bytes = name.as_encoded_bytes();
+				};
+				let name_bytes = child.file_name.as_encoded_bytes();
 				if name_bytes.windows(pattern_len).any(|window| window == PATTERN_BYTES) {
-					println!("Found item: {path:?}");
+					println!("Found item: {:?}", child.path());
 				}
 				if count % 10000 == 0 {
 					println!("Searched {count} items");
 				}
 				
 			}
-		}}).into_iter().collect::<Vec<_>>();
+		}});
+	for _ in walk_dir {}
 	
 	println!("Finished in {:?}", start_time.elapsed());
 	
