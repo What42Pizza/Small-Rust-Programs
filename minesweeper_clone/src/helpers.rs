@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::fmt;
 
 
@@ -9,14 +8,6 @@ pub fn pad_string (input: String, len: usize) -> String {
 		padding += " ";
 	}
 	padding + &input
-}
-
-pub fn dup_char (input: char, len: usize) -> String {
-	let mut output = String::from("");
-	for _ in 0..len {
-		output += &input.to_string();
-	}
-	output
 }
 
 

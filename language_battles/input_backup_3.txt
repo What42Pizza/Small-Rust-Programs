@@ -1,0 +1,32 @@
+                    Mult    Go   Rust    C   C++    C#   Java  Kotl  Cloj  JAI   Pyth  Lua    JS    TS   LooF  Luna
+Starting prod.    |   6  |  10 |   4 |   2 |   3 |   5 |   5 |   6 |   4 |   8 |  10 |   8 |  10 |   9 |   5 |   6 |
+Lasting prod.     |  10  |   7 |   9 |   5 |   4 |   6 |   6 |   6 |   9 |   7 |   0 |   0 |   0 |   3 |   0 |   7 |  (this can also be considred the 'safety' category)
+Runtime speed     |   9  |   7 |  10 |  10 |  10 |   7 |   6 |   6 |   6 |  10 |  -5 |   0 |   3 |   3 |  -5 |   0 |
+RS consistency    |   4  |   5 |  10 |  10 |  10 |   5 |   5 |   5 |   5 |  10 |   5 |   5 |   5 |   5 |   5 |  10 |  (Runtime Speed consistancy, basically garbage collection = 5, static = 10)
+Compilation time  |   6  |  10 |   2 |   8 |   5 |   6 |   6 |   6 |   7 |  10 |  10 |  10 |  10 |   8 |   5 |   7 |
+Language control  |   3  |   0 |   8 |   4 |   5 |   3 |   3 |   3 |  10 |  10 |   3 |   4 |   3 |   3 |   5 |   4 |
+Syntax            |   7  |   6 |  10 |   3 |   0 |   8 |   8 |   8 |  -2 |   6 |   8 |   9 |   4 |   2 |   0 |   6 |
+Learning time     |   0  |  10 |  -5 |   0 |  -2 |   4 |   6 |   2 |   0 |   5 |  12 |  12 |  10 |   5 |   7 |   5 |  (higher score means less time to learn)
+Popularity        |   0  |   8 |   6 |   6 |   7 |   9 |   9 |   0 |   0 |   0 |  10 |   2 |  10 |   7 |   0 |   0 |
+Simple features   |   6  |   4 |   8 |   3 |   7 |   6 |   5 |   5 |   6 |   8 |   6 |   7 |   5 |   7 |   1 |   4 |  (quality & quantity; manipulating values, TODO: ADD MORE EXAMPLES HERE, etc.)
+Complex features  |   3  |   5 |   8 |   0 |   8 |   8 |   3 |   5 |   6 |   6 |   4 |   0 |   7 |   7 |   0 |   0 |  (quality & quantity; async/await, TODO: ADD MORE EXAMPLES HERE, etc.)
+Dev tools         |   5  |   6 |  10 |   7 |   5 |   8 |   7 |   4 |   3 |   4 |   3 |   2 |   8 |   8 |   1 |   2 |  (quality & quantity; tools for writing code, testing code, debugging code, etc.)
+Ecosystem         |   7  |   8 |   8 |   9 |  10 |   8 |   8 |   8 |   5 |   3 |  10 |   5 |  10 |  10 |   0 |   0 |  (quality & quantity)
+Simplicity        |   3  |  10 |  -5 |   8 |  -5 |   6 |   3 |   5 |   8 |   5 |   7 |  10 |   2 |   0 |   7 |   6 |
+
+
+
+// Acronyms / abbreviations:
+// Kotl: Kotlin
+// Cloj: Clojure
+// Pyth: Python
+// JS: Javascript
+// TS: Typescript
+
+// My languages:
+// LooF
+// Luna
+
+// To add:
+// Zig
+// Nim

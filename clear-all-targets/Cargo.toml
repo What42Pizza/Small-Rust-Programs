@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.81"
-smart-read = "0.4.1"
-walkdir = "2.5.0"
+jwalk = "0.8.1"
+smart-read = "0.6.2"

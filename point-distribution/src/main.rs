@@ -13,7 +13,7 @@
 
 pub mod settings {
 	
-	pub const POINT_COUNT: usize = 40;
+	pub const POINT_COUNT: usize = 5;
 	pub const COMPUTE_RESOLUTION: usize = 512;
 	pub const AVERAGE_MOVEMENT_EXIT_THRESHOLD: f32 = 0.0001;
 	pub const MAX_ITERATIONS: usize = 100;

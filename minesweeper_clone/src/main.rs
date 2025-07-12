@@ -1,9 +1,9 @@
-// started 09/07/22
+// started 22/07/09
+// updated 25/05/23
 
 
 
 use std::error::Error;
-//use rand;
 use rand::{self, Rng};
 
 mod input;
@@ -25,7 +25,7 @@ impl Tile {
 	
 	fn new (is_bomb: bool) -> Self {
 		Tile {
-			is_bomb: is_bomb,
+			is_bomb,
 			bomb_count: 0,
 			is_covered: true,
 			is_flagged: false,
@@ -34,7 +34,7 @@ impl Tile {
 	}
 	
 	fn to_char (&self, show_bombs: bool) -> char {
-		if show_bombs && self.is_bomb {return '@';}
+		if show_bombs && self.is_bomb {return '*';}
 		if self.is_selected {return 'X';}
 		if self.is_flagged {return 'O';}
 		if self.is_covered {return '#';}
@@ -46,19 +46,19 @@ impl Tile {
 
 
 
-struct Feild {
+struct Field {
 	width: usize,
 	height: usize,
     tiles: Vec<Vec<Tile>>,
 	is_exploded: bool,
 }
 
-impl Feild {
+impl Field {
 	
-	fn new (width: usize, height: usize) -> Feild {
+	fn new (width: usize, height: usize) -> Field {
 		let column = vec![Tile::new(false); height];
 		let tiles = vec![column; width];
-		Feild {
+		Field {
 			width: width,
 			height: height,
 			tiles: tiles,
@@ -76,7 +76,7 @@ impl Feild {
 			let i_as_string = (i+1).to_string();
 			first_line += &helpers::pad_string(i_as_string, highest_x_len + 1);
 		}
-		println!("{} {}", helpers::dup_char(' ', highest_y_len), first_line);
+		println!("{} {}", " ".repeat(highest_y_len), first_line);
 		
 		for y in 0..self.height {
 			let mut line: String = String::from("");
@@ -118,16 +118,16 @@ impl Feild {
 
 fn main() -> Result<(), Box<dyn Error>> {
 	
-	println!("Feild width:");
+	println!("field width:");
 	let width = input::get_int()?;
-	println!("Feild height:");
+	println!("field height:");
 	let height = input::get_int()?;
-	println!("Bomb percent:  (recommened amount: 10%)");
-	let bomb_percent = input::get_int_bounded (5, 20)?;
-	let mut feild = generate_feild (width, height, (bomb_percent as f64) / 100.0);
+	println!("Bomb percent:  (recommended amount: 10%)");
+	let bomb_percent = input::get_int_bounded (5, 20)? as f32 / 100.;
+	let mut field = generate_field (width, height, bomb_percent);
 	
 	loop {
-		let continue_game = make_move(&mut feild)?;
+		let continue_game = make_move(&mut field)?;
 		if !continue_game {break;}
 	}
 	
@@ -139,45 +139,45 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
 
-fn generate_feild (width: usize, height: usize, bomb_percent: f64) -> Feild {
-    let mut rng = rand::thread_rng();
-	let mut feild = Feild::new(width, height);
+fn generate_field (width: usize, height: usize, bomb_percent: f32) -> Field {
+    let mut rng = rand::rng();
+	let mut field = Field::new(width, height);
 	
 	for y in 0..height {
 		for x in 0..width {
-			if rng.gen::<f64>() < bomb_percent {
-				feild.tiles[x][y].is_bomb = true;
+			if rng.random::<f32>() < bomb_percent {
+				field.tiles[x][y].is_bomb = true;
 			}
 		}
 	}
 	
 	for y in 0..height {
 		for x in 0..width {
-			feild.tiles[x][y].bomb_count = get_bomb_count (&feild, x, y);
+			field.tiles[x][y].bomb_count = get_bomb_count (&field, x, y);
 		}
 	}
 	
-	feild
+	field
 }
 
 
 
-fn get_bomb_count (feild: &Feild, x: usize, y: usize) -> u32 {
+fn get_bomb_count (field: &Field, x: usize, y: usize) -> u32 {
 	
 	let left_edge = x == 0;
-	let right_edge = x == feild.width - 1;
+	let right_edge = x == field.width - 1;
 	let top_edge = y == 0;
-	let bottom_edge = y == feild.height - 1;
+	let bottom_edge = y == field.height - 1;
 	
 	let mut count = 0;
-	if !top_edge    && !left_edge  && feild.tiles[x-1][y-1].is_bomb {count += 1;}
-	if !top_edge    &&                feild.tiles[x  ][y-1].is_bomb {count += 1;}
-	if !top_edge    && !right_edge && feild.tiles[x+1][y-1].is_bomb {count += 1;}
-	if                 !left_edge  && feild.tiles[x-1][y  ].is_bomb {count += 1;}
-	if                 !right_edge && feild.tiles[x+1][y  ].is_bomb {count += 1;}
-	if !bottom_edge && !left_edge  && feild.tiles[x-1][y+1].is_bomb {count += 1;}
-	if !bottom_edge &&                feild.tiles[x  ][y+1].is_bomb {count += 1;}
-	if !bottom_edge && !right_edge && feild.tiles[x+1][y+1].is_bomb {count += 1;}
+	if !top_edge    && !left_edge  && field.tiles[x-1][y-1].is_bomb {count += 1;}
+	if !top_edge    &&                field.tiles[x  ][y-1].is_bomb {count += 1;}
+	if !top_edge    && !right_edge && field.tiles[x+1][y-1].is_bomb {count += 1;}
+	if                 !left_edge  && field.tiles[x-1][y  ].is_bomb {count += 1;}
+	if                 !right_edge && field.tiles[x+1][y  ].is_bomb {count += 1;}
+	if !bottom_edge && !left_edge  && field.tiles[x-1][y+1].is_bomb {count += 1;}
+	if !bottom_edge &&                field.tiles[x  ][y+1].is_bomb {count += 1;}
+	if !bottom_edge && !right_edge && field.tiles[x+1][y+1].is_bomb {count += 1;}
 	
 	count
 	
@@ -185,38 +185,38 @@ fn get_bomb_count (feild: &Feild, x: usize, y: usize) -> u32 {
 
 
 
-fn make_move (feild: &mut Feild) -> Result<bool, Box<dyn Error>> {
+fn make_move (field: &mut Field) -> Result<bool, Box<dyn Error>> {
 	
-	let (x_pos, y_pos, action) = choose_tile (feild)?;
+	let (x_pos, y_pos, action) = choose_tile (field)?;
 	
 	match &*action {
 		
 		"uncover" => {
-			uncover_and_propagate_tile (feild, x_pos, y_pos);
+			uncover_and_propagate_tile (field, x_pos, y_pos);
 		},
 		
 		"flag" => {
-			flag_tile (feild, x_pos, y_pos);
+			flag_tile (field, x_pos, y_pos);
 		}
 		
 		"unflag" => {
-			unflag_tile (feild, x_pos, y_pos);
+			unflag_tile (field, x_pos, y_pos);
 		}
 		
 		_ => {unreachable!();}
 	}
 	
-	if !feild.is_finished() {
+	if !field.is_finished() {
 		return Ok(true);
 	}
 	
-	if feild.is_exploded {
+	if field.is_exploded {
 		print!("\n\n\n");
-		feild.print (true);
+		field.print (true);
 		println!("Game over.");
 	} else {
 		print!("\n\n\n");
-		feild.print (true);
+		field.print (true);
 		println!("You finished!");
 	}
 	
@@ -226,20 +226,20 @@ fn make_move (feild: &mut Feild) -> Result<bool, Box<dyn Error>> {
 
 
 
-fn choose_tile (feild: &mut Feild) -> Result<(usize, usize, String), Box<dyn Error>> {
+fn choose_tile (field: &mut Field) -> Result<(usize, usize, String), Box<dyn Error>> {
 	loop {
 		
 		print!("\n\n\n");
-		feild.print (false);
+		field.print (false);
 		
 		println!("\nX position:");
-		let x_pos = input::get_int_bounded(1, feild.width)? - 1;
+		let x_pos = input::get_int_bounded(1, field.width)? - 1;
 		println!("Y position:");
-		let y_pos = input::get_int_bounded(1, feild.height)? - 1;
+		let y_pos = input::get_int_bounded(1, field.height)? - 1;
 		
-		feild.tiles[x_pos][y_pos].is_selected = true;
-		feild.print (false);
-		feild.tiles[x_pos][y_pos].is_selected = false;
+		field.tiles[x_pos][y_pos].is_selected = true;
+		field.print (false);
+		field.tiles[x_pos][y_pos].is_selected = false;
 		
 		println!("\nWhat would you like to do at this location?");
 		let action = input::get_string_bounded(vec!["uncover", "flag", "unflag", "choose other spot"])?;
@@ -257,36 +257,36 @@ fn choose_tile (feild: &mut Feild) -> Result<(usize, usize, String), Box<dyn Err
 
 
 
-fn uncover_and_propagate_tile (feild: &mut Feild, x_pos: usize, y_pos: usize) {
+fn uncover_and_propagate_tile (field: &mut Field, x_pos: usize, y_pos: usize) {
 	
-	let mut tile = &feild.tiles[x_pos][y_pos];
+	let tile = &field.tiles[x_pos][y_pos];
 	
 	if tile.is_flagged {
 		println!("\n\nFlagged tiles cannot be uncovered.");
 		return;
 	}
 	
-	uncover_tile (feild, x_pos, y_pos);
+	uncover_tile (field, x_pos, y_pos);
 	
 	let mut positions_to_propagate = vec![(x_pos, y_pos)];
 	loop {
 		if positions_to_propagate.len() == 0 {break;}
 		let (current_x, current_y) = positions_to_propagate.pop().unwrap();
-		let current_tile = &feild.tiles[current_x][current_y];
+		let current_tile = &field.tiles[current_x][current_y];
 		if current_tile.is_bomb || current_tile.bomb_count > 0 {continue;}
-		expose_surrounding_tiles (feild, current_x, current_y, &mut positions_to_propagate);
+		expose_surrounding_tiles (field, current_x, current_y, &mut positions_to_propagate);
 	}
 	
 }
 
 
 
-fn uncover_tile (feild: &mut Feild, x_pos: usize, y_pos: usize) {
+fn uncover_tile (field: &mut Field, x_pos: usize, y_pos: usize) {
 	
-	let mut tile = &mut feild.tiles[x_pos][y_pos];
+	let tile = &mut field.tiles[x_pos][y_pos];
 	
 	if tile.is_bomb {
-		feild.is_exploded = true;
+		field.is_exploded = true;
 		return;
 	}
 	
@@ -296,27 +296,27 @@ fn uncover_tile (feild: &mut Feild, x_pos: usize, y_pos: usize) {
 
 
 
-fn expose_surrounding_tiles (feild: &mut Feild, current_x: usize, current_y: usize, positions_to_propagate: &mut Vec<(usize, usize)>) {
+fn expose_surrounding_tiles (field: &mut Field, current_x: usize, current_y: usize, positions_to_propagate: &mut Vec<(usize, usize)>) {
 	
 	let left_edge = current_x == 0;
-	let right_edge = current_x == feild.width - 1;
+	let right_edge = current_x == field.width - 1;
 	let top_edge = current_y == 0;
-	let bottom_edge = current_y == feild.height - 1;
+	let bottom_edge = current_y == field.height - 1;
 	
-	if !top_edge    && !left_edge  {expose_tile (feild, current_x-1, current_y-1, positions_to_propagate);}
-	if !top_edge                   {expose_tile (feild, current_x  , current_y-1, positions_to_propagate);}
-	if !top_edge    && !right_edge {expose_tile (feild, current_x+1, current_y-1, positions_to_propagate);}
-	if                 !left_edge  {expose_tile (feild, current_x-1, current_y  , positions_to_propagate);}
-	if                 !right_edge {expose_tile (feild, current_x+1, current_y  , positions_to_propagate);}
-	if !bottom_edge && !left_edge  {expose_tile (feild, current_x-1, current_y+1, positions_to_propagate);}
-	if !bottom_edge                {expose_tile (feild, current_x  , current_y+1, positions_to_propagate);}
-	if !bottom_edge && !right_edge {expose_tile (feild, current_x+1, current_y+1, positions_to_propagate);}
+	if !top_edge    && !left_edge  {expose_tile (field, current_x-1, current_y-1, positions_to_propagate);}
+	if !top_edge                   {expose_tile (field, current_x  , current_y-1, positions_to_propagate);}
+	if !top_edge    && !right_edge {expose_tile (field, current_x+1, current_y-1, positions_to_propagate);}
+	if                 !left_edge  {expose_tile (field, current_x-1, current_y  , positions_to_propagate);}
+	if                 !right_edge {expose_tile (field, current_x+1, current_y  , positions_to_propagate);}
+	if !bottom_edge && !left_edge  {expose_tile (field, current_x-1, current_y+1, positions_to_propagate);}
+	if !bottom_edge                {expose_tile (field, current_x  , current_y+1, positions_to_propagate);}
+	if !bottom_edge && !right_edge {expose_tile (field, current_x+1, current_y+1, positions_to_propagate);}
 	
 }
 
-fn expose_tile (feild: &mut Feild, current_x: usize, current_y: usize, positions_to_propagate: &mut Vec<(usize, usize)>) {
+fn expose_tile (field: &mut Field, current_x: usize, current_y: usize, positions_to_propagate: &mut Vec<(usize, usize)>) {
 	
-	let mut tile = &mut feild.tiles[current_x][current_y];
+	let tile = &mut field.tiles[current_x][current_y];
 	
 	if !tile.is_covered {return;}
 	
@@ -328,9 +328,9 @@ fn expose_tile (feild: &mut Feild, current_x: usize, current_y: usize, positions
 
 
 
-fn flag_tile (feild: &mut Feild, x_pos: usize, y_pos: usize) {
+fn flag_tile (field: &mut Field, x_pos: usize, y_pos: usize) {
 	
-	let mut tile = &mut feild.tiles[x_pos][y_pos];
+	let tile = &mut field.tiles[x_pos][y_pos];
 	
 	if !tile.is_covered {
 		println!("\n\nThis tile is uncovered, no need to flag it.");
@@ -343,9 +343,9 @@ fn flag_tile (feild: &mut Feild, x_pos: usize, y_pos: usize) {
 
 
 
-fn unflag_tile (feild: &mut Feild, x_pos: usize, y_pos: usize) {
+fn unflag_tile (field: &mut Field, x_pos: usize, y_pos: usize) {
 	
-	let mut tile = &mut feild.tiles[x_pos][y_pos];
+	let tile = &mut field.tiles[x_pos][y_pos];
 	
 	if !tile.is_covered {
 		println!("\n\nThis tile is uncovered, no need to unflag it.");

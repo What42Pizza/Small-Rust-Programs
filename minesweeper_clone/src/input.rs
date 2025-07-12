@@ -10,7 +10,8 @@ pub fn get_string() -> Result<String, Box<dyn Error>> {
     
     let mut input_string = String::new();
     io::stdin().read_line(&mut input_string)?;
-    input_string = input_string[..input_string.len()-2].to_string();
+	if input_string.ends_with('\n') {input_string.pop();}
+	if input_string.ends_with('\r') {input_string.pop();}
     
     match input_string.as_str() {
         "panic!" => {panic!();},
@@ -85,19 +86,19 @@ pub fn get_int() -> Result<usize, Box<dyn Error>> {
 
 
 
-pub fn get_bool() -> Result<bool, Box<dyn Error>> {
-    println!("Enter (y)es or (n)o:");
-    loop {
+//pub fn get_bool() -> Result<bool, Box<dyn Error>> {
+//    println!("Enter (y)es or (n)o:");
+//    loop {
         
-        let input_string = get_string()?;
+//        let input_string = get_string()?;
         
-        match input_string.as_str() {
-            "y" => {return Ok(true);}
-            "n" => {return Ok(false);}
-            _ => {
-                println!("Please enter (y)es or (n)o:");
-            }
-        }
+//        match input_string.as_str() {
+//            "y" => {return Ok(true);}
+//            "n" => {return Ok(false);}
+//            _ => {
+//                println!("Please enter (y)es or (n)o:");
+//            }
+//        }
         
-    }
-}
+//    }
+//}
