@@ -17,8 +17,7 @@ use std::{result::Result as StdResult, sync::atomic::{AtomicUsize, Ordering}, ti
 fn main() -> Result<()> {
 	
 	static mut COUNT: AtomicUsize = AtomicUsize::new(0);
-	static mut PATTERN: String = String::new();
-	static mut PATTERN_BYTES: &[u8] = &[];
+	static mut PATTERN_LOWERCASE: String = String::new();
 	
 	#[cfg(target_os="windows")]
 	let top_folder = prompt!("Starting folder: "; ["C:/"]);
@@ -28,10 +27,8 @@ fn main() -> Result<()> {
 	let ignore_errors = prompt!("Ignore errors? "; [true] YesNoInput);
 	
 	unsafe {
-		PATTERN = pattern;
-		PATTERN_BYTES = PATTERN.as_bytes();
+		PATTERN_LOWERCASE = pattern;
 	}
-	let pattern_len = unsafe { PATTERN_BYTES.len() };
 	
 	let start_time = Instant::now();
 	let walk_dir = WalkDir::new(top_folder)
@@ -46,8 +43,8 @@ fn main() -> Result<()> {
 						return;
 					}
 				};
-				let name_bytes = child.file_name.as_encoded_bytes();
-				if name_bytes.windows(pattern_len).any(|window| window == PATTERN_BYTES) {
+				let name_lowercase = child.file_name.to_string_lossy().to_lowercase();
+				if name_lowercase.contains(&PATTERN_LOWERCASE) {
 					println!("Found item: {:?}", child.path());
 				}
 				if count % 10000 == 0 {
