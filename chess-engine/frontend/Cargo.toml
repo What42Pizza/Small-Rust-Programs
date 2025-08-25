@@ -1,0 +1,10 @@
+[package]
+name = "frontend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+shared = { path = "../shared" }
+anyhow = "1.0.99"
+sdl3 = { version = "0.14.36", features = ["build-from-source"] }
+rfd = {version = "0.15.4", default-features = false, features = ["gtk3"]}

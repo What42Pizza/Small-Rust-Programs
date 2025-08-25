@@ -1,4 +1,4 @@
-use crate::*;
+use shared::*;
 use std::ops::Coroutine;
 
 
@@ -332,7 +332,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				let y_max = y.min(6) + 1;
 				for x in x_min..=x_max {
 					for y in y_min..=y_max {
-						if !get_piece(&board, x, y, 36).is_self() {
+						if !get_piece(board, x, y, 36).is_self() {
 							yield (x, y, SpecialMove::None);
 						}
 					}
@@ -668,7 +668,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				let y_max = y.min(6) + 1;
 				for x in x_min..=x_max {
 					for y in y_min..=y_max {
-						if !get_piece(&board, x, y, 65).is_other() {
+						if !get_piece(board, x, y, 65).is_other() {
 							yield (x, y, SpecialMove::None);
 						}
 					}

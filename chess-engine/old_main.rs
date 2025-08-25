@@ -4,48 +4,15 @@
 #![feature(coroutines)]
 #![feature(coroutine_trait)]
 
+use shared::*;
 pub use std::{time::Instant, io::{Write, Stdout}, thread, time::Duration};
-pub use colored::{Color, ColoredString, Colorize};
-use crossterm::terminal;
-pub use crossterm::{cursor, execute};
 pub use smart_read::prelude::*;
-
-
-
-const BACKGROUND_COLOR_1: Color = Color::TrueColor { r: 95, g: 95, b: 95 };
-const BACKGROUND_COLOR_2: Color = Color::TrueColor { r: 159, g: 159, b: 159 };
-const BLACK_COLOR: Color = Color::TrueColor { r: 0, g: 0, b: 0 };
-const WHITE_COLOR: Color = Color::TrueColor { r: 255, g: 255, b: 255 };
 
 
 
 pub mod engine;
 pub mod utils;
 pub use utils::*;
-
-
-
-#[derive(Copy, Clone, PartialEq, Debug)]
-#[repr(u8)]
-pub enum Piece {
-	None = 0,
-	SelfPawn = 1,
-	SelfKnight = 2,
-	SelfBishop = 3,
-	SelfRook = 4,
-	SelfQueen = 5,
-	SelfKing = 6,
-	OtherPawn = 9,
-	OtherKnight = 10,
-	OtherBishop = 11,
-	OtherRook = 12,
-	OtherQueen = 13,
-	OtherKing = 14,
-}
-
-
-
-pub type Board = [u8; 32];
 
 
 

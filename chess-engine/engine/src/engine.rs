@@ -1,9 +1,7 @@
-use crate::*;
-use std::{array, mem::MaybeUninit, ops::{Coroutine, CoroutineState}, pin::Pin, sync::{atomic::AtomicUsize, Mutex}, thread::ScopedJoinHandle};
+use crate::engine_utils::*;
+use shared::*;
+use std::sync::Mutex;
 use rayon::ThreadPool;
-
-mod engine_utils;
-use engine_utils::*;
 
 
 
@@ -163,6 +161,7 @@ fn try_other_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha
 	score
 }
 
+#[allow(clippy::too_many_arguments)]
 fn perform_move(board: &mut Board, game_flags: &mut u8, piece: Piece, from_x: u8, from_y: u8, to_x: u8, to_y: u8, move_type: SpecialMove) {
 	*game_flags &= 0b00001111; // reset en passant data
 	set_piece(board, from_x, from_y, Piece::None);
@@ -371,7 +370,7 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 	if engine_moves_next {
 		for x in 0..4 {
 			for y in 0..8 {
-				let (piece1, piece2) = get_doubled_pieces(&board, x * 2, y);
+				let (piece1, piece2) = get_doubled_pieces(board, x * 2, y);
 				let i = (x * 2 + y * 8) as usize;
 				match piece1 {
 					Piece::SelfPawn => unsafe {attacked_squares |= SELF_PAWN_ATTACK_SQUARES[i];}
@@ -421,7 +420,7 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 	} else {
 		for x in 0..4 {
 			for y in 0..8 {
-				let (piece1, piece2) = get_doubled_pieces(&board, x * 2, y);
+				let (piece1, piece2) = get_doubled_pieces(board, x * 2, y);
 				let i = (x * 2 + y * 8) as usize;
 				match piece1 {
 					Piece::OtherPawn => unsafe {attacked_squares |= OTHER_PAWN_ATTACK_SQUARES[i];}
@@ -484,7 +483,7 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 	let mut player_has_king = false;
 	for x in 0..4 {
 		for y in 0..8 {
-			let (piece1, piece2) = get_doubled_pieces(&board, x * 2, y);
+			let (piece1, piece2) = get_doubled_pieces(board, x * 2, y);
 			let i = (x * 2 + y * 8) as usize;
 			let is_under_attack = attacked_squares & (1 << (x * 2 + y * 8)) > 0;
 			match piece1 {
