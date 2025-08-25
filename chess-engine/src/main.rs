@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let mut player_won = false;
 	let mut time_data = if starting_time > 0 {Some((starting_time, starting_time, bonus_time))} else {None};
 	let mut prev_board_state = board.clone();
-	let mut game_flags = 0; // flags: 0: can castle with player left rook, 1: can castle with player right rook, 2: can castle with engine left rook, 3: can castle with engine right rook, 4: can en passant, 5-7: en passant file
+	let mut game_flags = 0b00001111; // flags: 0: can castle with player left rook, 1: can castle with player right rook, 2: can castle with engine left rook, 3: can castle with engine right rook, 4: can en passant, 5-7: en passant file
 	
 	//print_board(&board, &mut stdout)?;
 	//println!("{}", engine::get_board_score(&board));
@@ -150,67 +150,67 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			let to_piece = get_piece(&board, to_file, to_rank, 69);
 			if to_piece.is_other() {output!(stdout, 21, "Invalid input, you already have a piece at {}{}", player_move_chars[2], player_move_chars[3]); continue 'player_move;}
 			
-			let is_slot_under_attack = |x: u8, y: u8| {
-				// pawns
-				if (x >= 1 && y <= 6 && get_piece(&board, x - 1, y + 1, 70) == Piece::SelfPawn)
-				|| (x <= 6 && y <= 6 && get_piece(&board, x + 1, y + 1, 71) == Piece::SelfPawn)
-				{return true;}
-				// knights
-				if (x >= 1 && y <= 5 && get_piece(&board, x - 1, y + 2, 72) == Piece::SelfKnight)
-				|| (x <= 6 && y <= 5 && get_piece(&board, x + 1, y + 2, 73) == Piece::SelfKnight)
-				|| (x <= 5 && y <= 6 && get_piece(&board, x + 2, y + 1, 74) == Piece::SelfKnight)
-				|| (x <= 5 && y >= 1 && get_piece(&board, x + 2, y - 1, 75) == Piece::SelfKnight)
-				|| (x <= 6 && y >= 2 && get_piece(&board, x + 1, y - 2, 76) == Piece::SelfKnight)
-				|| (x >= 1 && y >= 2 && get_piece(&board, x - 1, y - 2, 77) == Piece::SelfKnight)
-				|| (x >= 2 && y >= 1 && get_piece(&board, x - 2, y - 1, 78) == Piece::SelfKnight)
-				|| (x >= 2 && y <= 6 && get_piece(&board, x - 2, y + 1, 79) == Piece::SelfKnight)
-				{return true;}
-				// bishops (and queens)
-				let check_bishops_and_queens = |x_dir: u8, y_dir: u8| {
-					let mut curr_x = x;
-					let mut curr_y = y;
-					while curr_x > 0 && curr_x < 7 && curr_y > 0 && curr_y < 7 {
-						curr_x = curr_x.wrapping_add(x_dir);
-						curr_y = curr_y.wrapping_add(y_dir);
-						let piece = get_piece(&board, curr_x, curr_y, 80);
-						if piece == Piece::SelfBishop || piece == Piece::SelfQueen {return true;}
-						if piece.is_other() {break;}
-					}
-					false
-				};
-				if check_bishops_and_queens(1, 1) {return true;}
-				if check_bishops_and_queens(1, 255) {return true;}
-				if check_bishops_and_queens(255, 1) {return true;}
-				if check_bishops_and_queens(255, 255) {return true;}
-				// rooks (and queens)
-				let check_rooks_and_queens = |x_dir: u8, y_dir: u8| {
-					let mut curr_x = x;
-					let mut curr_y = y;
-					while curr_x > 0 && curr_x < 7 && curr_y > 0 && curr_y < 7 {
-						curr_x = curr_x.wrapping_add(x_dir);
-						curr_y = curr_y.wrapping_add(y_dir);
-						let piece = get_piece(&board, curr_x, curr_y, 81);
-						if piece == Piece::SelfRook || piece == Piece::SelfQueen {return true;}
-						if piece.is_other() {break;}
-					}
-					false
-				};
-				if check_rooks_and_queens(0, 1) {return true;}
-				if check_rooks_and_queens(1, 0) {return true;}
-				if check_rooks_and_queens(0, 255) {return true;}
-				if check_rooks_and_queens(255, 0) {return true;}
-				// kings
-				let x_min = x.max(1) - 1;
-				let y_min = y.max(1) - 1;
-				let x_max = x.min(6) + 1;
-				let y_max = y.min(6) + 1;
-				for x in x_min..=x_max {
-					for y in y_min..=y_max {
-						if get_piece(&board, x, y, 82) == Piece::SelfKing {return true;}
-					}
-				}
-				false
-			};
+			//let is_slot_under_attack = |x: u8, y: u8| {
+			//	// pawns
+			//	if (x >= 1 && y <= 6 && get_piece(&board, x - 1, y + 1, 70) == Piece::SelfPawn)
+			//	|| (x <= 6 && y <= 6 && get_piece(&board, x + 1, y + 1, 71) == Piece::SelfPawn)
+			//	{return true;}
+			//	// knights
+			//	if (x >= 1 && y <= 5 && get_piece(&board, x - 1, y + 2, 72) == Piece::SelfKnight)
+			//	|| (x <= 6 && y <= 5 && get_piece(&board, x + 1, y + 2, 73) == Piece::SelfKnight)
+			//	|| (x <= 5 && y <= 6 && get_piece(&board, x + 2, y + 1, 74) == Piece::SelfKnight)
+			//	|| (x <= 5 && y >= 1 && get_piece(&board, x + 2, y - 1, 75) == Piece::SelfKnight)
+			//	|| (x <= 6 && y >= 2 && get_piece(&board, x + 1, y - 2, 76) == Piece::SelfKnight)
+			//	|| (x >= 1 && y >= 2 && get_piece(&board, x - 1, y - 2, 77) == Piece::SelfKnight)
+			//	|| (x >= 2 && y >= 1 && get_piece(&board, x - 2, y - 1, 78) == Piece::SelfKnight)
+			//	|| (x >= 2 && y <= 6 && get_piece(&board, x - 2, y + 1, 79) == Piece::SelfKnight)
+			//	{return true;}
+			//	// bishops (and queens)
+			//	let check_bishops_and_queens = |x_dir: u8, y_dir: u8| {
+			//		let mut curr_x = x;
+			//		let mut curr_y = y;
+			//		while curr_x > 0 && curr_x < 7 && curr_y > 0 && curr_y < 7 {
+			//			curr_x = curr_x.wrapping_add(x_dir);
+			//			curr_y = curr_y.wrapping_add(y_dir);
+			//			let piece = get_piece(&board, curr_x, curr_y, 80);
+			//			if piece == Piece::SelfBishop || piece == Piece::SelfQueen {return true;}
+			//			if piece.is_other() {break;}
+			//		}
+			//		false
+			//	};
+			//	if check_bishops_and_queens(1, 1) {return true;}
+			//	if check_bishops_and_queens(1, 255) {return true;}
+			//	if check_bishops_and_queens(255, 1) {return true;}
+			//	if check_bishops_and_queens(255, 255) {return true;}
+			//	// rooks (and queens)
+			//	let check_rooks_and_queens = |x_dir: u8, y_dir: u8| {
+			//		let mut curr_x = x;
+			//		let mut curr_y = y;
+			//		while curr_x > 0 && curr_x < 7 && curr_y > 0 && curr_y < 7 {
+			//			curr_x = curr_x.wrapping_add(x_dir);
+			//			curr_y = curr_y.wrapping_add(y_dir);
+			//			let piece = get_piece(&board, curr_x, curr_y, 81);
+			//			if piece == Piece::SelfRook || piece == Piece::SelfQueen {return true;}
+			//			if piece.is_other() {break;}
+			//		}
+			//		false
+			//	};
+			//	if check_rooks_and_queens(0, 1) {return true;}
+			//	if check_rooks_and_queens(1, 0) {return true;}
+			//	if check_rooks_and_queens(0, 255) {return true;}
+			//	if check_rooks_and_queens(255, 0) {return true;}
+			//	// kings
+			//	let x_min = x.max(1) - 1;
+			//	let y_min = y.max(1) - 1;
+			//	let x_max = x.min(6) + 1;
+			//	let y_max = y.min(6) + 1;
+			//	for x in x_min..=x_max {
+			//		for y in y_min..=y_max {
+			//			if get_piece(&board, x, y, 82) == Piece::SelfKing {return true;}
+			//		}
+			//	}
+			//	false
+			//};
 			
 			// check if move is valid
 			let is_valid = 'is_valid: {match from_piece {
@@ -307,12 +307,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 					}
 				}
 				Piece::OtherKing => {
-					if from_file == 4 && from_rank == 0 && to_file == 2 && to_rank == 0 && (game_flags & 0b00000001) > 0 && !is_slot_under_attack(4, 0) && !is_slot_under_attack(3, 0) && !is_slot_under_attack(2, 0) {
+					if from_file == 4 && from_rank == 0 && to_file == 2 && to_rank == 0 && (game_flags & 0b00000001) > 0 {
 						set_piece(&mut board, 0, 0, Piece::None);
 						set_piece(&mut board, 3, 0, Piece::OtherRook);
 						game_flags &= 0b11111100;
 						true
-					} else if from_file == 4 && from_rank == 0 && to_file == 6 && to_rank == 0 && (game_flags & 0b00000010) > 0 && !is_slot_under_attack(4, 0) && !is_slot_under_attack(5, 0) && !is_slot_under_attack(6, 0) {
+					} else if from_file == 4 && from_rank == 0 && to_file == 6 && to_rank == 0 && (game_flags & 0b00000010) > 0 {
 						set_piece(&mut board, 7, 0, Piece::None);
 						set_piece(&mut board, 5, 0, Piece::OtherRook);
 						game_flags &= 0b11111100;

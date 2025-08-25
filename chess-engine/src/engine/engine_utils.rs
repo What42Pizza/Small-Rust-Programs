@@ -371,7 +371,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 						yield (x, y + 1, SpecialMove::None);
 					}
 				}
-				if x >= 1 && get_piece(board, x - 1, y + 1, 39).is_other() {
+				if x >= 1 && get_piece(board, x - 1, y + 1, 39).is_self() {
 					if y == 6 {
 						yield (x - 1, y + 1, SpecialMove::PromoteKnight);
 						yield (x - 1, y + 1, SpecialMove::PromoteBishop);
@@ -381,7 +381,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 						yield (x - 1, y + 1, SpecialMove::None);
 					}
 				}
-				if x <= 6 && get_piece(board, x + 1, y + 1, 40).is_other() {
+				if x <= 6 && get_piece(board, x + 1, y + 1, 40).is_self() {
 					if y == 6 {
 						yield (x + 1, y + 1, SpecialMove::PromoteKnight);
 						yield (x + 1, y + 1, SpecialMove::PromoteBishop);
@@ -393,10 +393,10 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				}
 				if game_flags & 0b00010000 > 0 && y == 4 {
 					if x >= 1 && ((game_flags & 0b11100000) >> 5) == x - 1 {
-						yield (x - 1, y - 1, SpecialMove::EnPassant);
+						yield (x - 1, y + 1, SpecialMove::EnPassant);
 					}
 					if x <= 6 && ((game_flags & 0b11100000) >> 5) == x + 1 {
-						yield (x + 1, y - 1, SpecialMove::EnPassant);
+						yield (x + 1, y + 1, SpecialMove::EnPassant);
 					}
 				}
 			}
