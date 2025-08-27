@@ -7,4 +7,6 @@ edition = "2024"
 shared = { path = "../shared" }
 anyhow = "1.0.99"
 sdl3 = { version = "0.14.36", features = ["build-from-source"] }
+ab_glyph = "0.2.31"
 rfd = {version = "0.15.4", default-features = false, features = ["gtk3"]}
+rayon = "1.11.0"

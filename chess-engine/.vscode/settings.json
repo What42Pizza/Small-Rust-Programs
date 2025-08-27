@@ -1,6 +1,11 @@
 {
 	"cSpell.words": [
+		"ARGB",
 		"crossterm",
-		"passant"
+		"keymod",
+		"LCTRLMOD",
+		"Noto",
+		"passant",
+		"RCTRLMOD"
 	]
 }

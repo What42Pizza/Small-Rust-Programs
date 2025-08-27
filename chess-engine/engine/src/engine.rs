@@ -19,14 +19,12 @@ pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<
 	
 	static mut OUTPUTS: [(f32, u8, u8, SpecialMove); 64] = [(-100000000.0, 0, 0, SpecialMove::None); 64];
 	thread_pool.scope(|s| {
-		for i in 0..64 {
+		#[allow(static_mut_refs)]
+		for (i, output) in unsafe {OUTPUTS.iter_mut().enumerate()} {
 			let board = *board;
 			let game_flags = *game_flags;
 			s.spawn(move |_s| {
-				let output = try_self_move(board, time_remaining, i as u8, game_flags, 7);
-				unsafe {
-					OUTPUTS[i] = output;
-				}
+				*output = try_self_move(board, time_remaining, i as u8, game_flags, 7);
 			});
 		}
 	});
