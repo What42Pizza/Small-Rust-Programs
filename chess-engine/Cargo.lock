@@ -139,10 +139,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "easy-sdl3-text"
-version = "0.1.0"
+name = "easy-configuration-format"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1925e427b60d9658a2b6a07d7982bb85fbf6fba76e2dd913ec80c01694ac6df3"
+checksum = "0f6f2a77eee90d1d7591b3b7671a744710c593dae97cb97ab2489e550d1b0113"
+
+[[package]]
+name = "easy-sdl3-text"
+version = "0.1.1"
+source = "git+https://github.com/What42Pizza/easy-sdl3-text.git#87edf956a5f7d320c99faaa2a9750d5b402a5911"
 dependencies = [
  "ab_glyph",
  "rayon",
@@ -176,6 +181,7 @@ version = "0.1.0"
 dependencies = [
  "ab_glyph",
  "anyhow",
+ "easy-configuration-format",
  "easy-sdl3-text",
  "rayon",
  "rfd",
