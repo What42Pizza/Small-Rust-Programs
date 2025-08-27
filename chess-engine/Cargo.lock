@@ -139,6 +139,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "easy-sdl3-text"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1925e427b60d9658a2b6a07d7982bb85fbf6fba76e2dd913ec80c01694ac6df3"
+dependencies = [
+ "ab_glyph",
+ "rayon",
+ "sdl3",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -165,6 +176,7 @@ version = "0.1.0"
 dependencies = [
  "ab_glyph",
  "anyhow",
+ "easy-sdl3-text",
  "rayon",
  "rfd",
  "sdl3",

@@ -1,5 +1,5 @@
 use crate::*;
-use std::{f32, sync::Mutex};
+use std::{collections::HashSet, f32, sync::Mutex};
 use ab_glyph::{Font, Glyph, PxScale, PxScaleFont, ScaleFont};
 use sdl3::{pixels::{Color, PixelFormat}, rect::Rect, sys::pixels::SDL_PixelFormat};
 
@@ -144,3 +144,10 @@ pub fn ensure_glyph_is_rasterized(glyph: Glyph, c: char, foreground: Color, back
 pub trait ThreadSafeFont: Font + Send + Sync {}
 
 impl<T: Font + Send + Sync> ThreadSafeFont for T {}
+
+// (char, size, foreground, background) -> (texture, x_offset, y_offset)
+#[derive(Default)]
+pub struct TextCache<'a> {
+	pub(crate) map: HashMap<(char, usize, Color, Color), (Texture<'a>, f32, f32)>,
+	pub(crate) set: HashSet<(char, usize, Color, Color)>,
+}
