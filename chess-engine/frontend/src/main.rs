@@ -5,6 +5,8 @@
 
 
 
+pub mod events;
+pub use events::*;
 pub mod draw;
 pub use draw::*;
 pub mod data;
@@ -16,8 +18,9 @@ pub use utils::*;
 
 pub use shared::*;
 use std::fs;
-pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, SystemTime}};
-pub use sdl3::{render::{Canvas, FRect}, video::Window, event::Event, keyboard::Mod, render::{Texture, TextureCreator}, video::WindowContext, pixels::Color};
+pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, Duration, SystemTime}};
+pub use sdl3::{render::{Canvas, FRect}, video::Window, event::Event, keyboard::Mod, render::{Texture, TextureCreator}, video::WindowContext, pixels::{Color, PixelFormat}, sys::pixels::SDL_PixelFormat};
+use image::{EncodableLayout, ImageReader};
 pub use anyhow::*;
 pub use easy_sdl3_text as sdl3_text;
 pub use ab_glyph::FontVec;
@@ -67,42 +70,25 @@ fn main_result() -> Result<()> {
 		
 		settings,
 		resources_path,
+		window_size: canvas.window().size(),
 		should_close: false,
 		
 		board: default_board(),
+		state: State::NotPlaying,
 		
 	};
 	
 	while !data.should_close {
 		
+		reload_settings_if_needed(&mut data, &mut text_cache)?;
+		
 		for event in event_pump.poll_iter() { handle_event(&mut data, event)?; }
 		
+		data.window_size = canvas.output_size()?;
 		draw(&mut data, &mut canvas, &texture_creator, &mut text_cache, &textures)?;
-		
-		reload_settings_if_needed(&mut data, &mut text_cache)?;
 		
 	}
 	
-	Ok(())
-}
-
-
-
-fn handle_event(data: &mut AppData, event: Event) -> Result<()> {
-	match event {
-		
-		Event::Quit { timestamp: _ } => data.should_close = true,
-		
-		Event::KeyDown { timestamp: _, window_id: _, keycode, scancode: _, keymod, repeat: _, which: _, raw: _ } => {
-			
-			if keycode == Some(sdl3::keyboard::Keycode::W) && (keymod.contains(Mod::RCTRLMOD) || keymod.contains(Mod::LCTRLMOD)) {
-				data.should_close = true;
-			}
-			
-		}
-		
-		_ => {}
-	}
 	Ok(())
 }
 

@@ -6,10 +6,39 @@ pub struct AppData {
 	
 	pub settings: AppSettings,
 	pub resources_path: PathBuf,
+	pub window_size: (u32, u32),
 	pub should_close: bool,
 	
-	pub board: Board,
 	
+	
+	pub board: Board,
+	pub state: State,
+	
+}
+
+
+
+pub enum State {
+	NotPlaying,
+	Playing {time_data: TimeData, turn: TurnData},
+}
+
+pub enum TurnData {
+	PlayersTurn (PlayersTurnState),
+	EnginesTurn,
+}
+
+pub enum PlayersTurnState {
+	NotHoldingPiece,
+	HoldingPiece {x: u8, y: u8, piece: Piece},
+}
+
+
+
+pub struct TimeData {
+	pub player_time_remaining: Duration,
+	pub engine_time_remaining: Duration,
+	pub time_per_move: Duration
 }
 
 

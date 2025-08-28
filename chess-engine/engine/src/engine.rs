@@ -1,4 +1,3 @@
-use crate::engine_utils::*;
 use shared::*;
 use std::sync::Mutex;
 use rayon::ThreadPool;
@@ -24,7 +23,7 @@ pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<
 			let board = *board;
 			let game_flags = *game_flags;
 			s.spawn(move |_s| {
-				*output = try_self_move(board, time_remaining, i as u8, game_flags, 7);
+				*output = try_black_move(board, time_remaining, i as u8, game_flags, 7);
 			});
 		}
 	});
@@ -53,18 +52,18 @@ pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<
 
 static LOCK: Mutex<()> = Mutex::new(());
 
-fn try_self_move(board: Board, ending_millis: usize, index: u8, game_flags: u8, depth: u8) -> (f32, u8, u8, SpecialMove) {
+fn try_black_move(board: Board, ending_millis: usize, index: u8, game_flags: u8, depth: u8) -> (f32, u8, u8, SpecialMove) {
 	let depth = depth - 1;
 	let (x, y) = (index % 8, index / 8);
 	let piece = get_piece(&board, x, y, 67);
 	let mut best_move = (-100000000.0, 0, 0, SpecialMove::None); // searching for the best move for the engine
 	let mut alpha = -100000000.0;
-	let mut beta = 100000000.0;
-	for (move_x, move_y, move_type) in get_self_moves(&board, piece, x, y, game_flags) {
+	let beta = 100000000.0;
+	for (move_x, move_y, move_type) in get_black_moves(&board, piece, x, y, game_flags) {
 		let mut new_board = board;
 		let mut new_game_flags = game_flags;
 		perform_move(&mut new_board, &mut new_game_flags, piece, x, y, move_x, move_y, move_type);
-		let move_score = try_other_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth);
+		let move_score = try_white_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth);
 		if move_score > best_move.0 { // if found a better move for the engine
 			best_move = (move_score, move_x, move_y, move_type);
 		}
@@ -73,7 +72,7 @@ fn try_self_move(board: Board, ending_millis: usize, index: u8, game_flags: u8, 
 	best_move
 }
 
-fn try_self_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha: f32, mut beta: f32, depth: u8) -> f32 {
+fn try_black_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha: f32, beta: f32, depth: u8) -> f32 {
 	let depth = depth - 1;
 	let mut score: f32 = -100000000.0; // searching for the best move for the engine
 	//let mut move_count = 0;
@@ -81,7 +80,7 @@ fn try_self_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha:
 		for y in 0..8 {
 			let x = x * 2;
 			let (piece1, piece2) = get_doubled_pieces(&board, x, y);
-			if piece1.is_self() {for (move_x, move_y, move_type) in get_self_moves(&board, piece1, x, y, game_flags) {
+			if piece1.is_black() {for (move_x, move_y, move_type) in get_black_moves(&board, piece1, x, y, game_flags) {
 				//move_count += 1;
 				let mut new_board = board;
 				let mut new_game_flags = game_flags;
@@ -89,14 +88,14 @@ fn try_self_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha:
 				let move_score = if depth == 0 {
 					get_board_score(&new_board, false)
 				} else {
-					try_other_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth)
+					try_white_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth)
 				};
 				score = score.max(move_score);
 				alpha = alpha.max(move_score);
 				if alpha >= beta {return score;}
 			}}
 			let x = x + 1;
-			if piece2.is_self() {for (move_x, move_y, move_type) in get_self_moves(&board, piece2, x, y, game_flags) {
+			if piece2.is_black() {for (move_x, move_y, move_type) in get_black_moves(&board, piece2, x, y, game_flags) {
 				//move_count += 1;
 				let mut new_board = board;
 				let mut new_game_flags = game_flags;
@@ -104,7 +103,7 @@ fn try_self_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha:
 				let move_score = if depth == 0 {
 					get_board_score(&new_board, false)
 				} else {
-					try_other_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth)
+					try_white_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth)
 				};
 				score = score.max(move_score);
 				alpha = alpha.max(move_score);
@@ -116,7 +115,7 @@ fn try_self_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha:
 	score
 }
 
-fn try_other_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha: f32, mut beta: f32, depth: u8) -> f32 {
+fn try_white_moves(board: Board, ending_millis: usize, game_flags: u8, alpha: f32, mut beta: f32, depth: u8) -> f32 {
 	let depth = depth - 1;
 	let mut score: f32 = 100000000.0; // searching for the best move for the player
 	//let mut move_count = 0;
@@ -124,7 +123,7 @@ fn try_other_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha
 		for y in 0..8 {
 			let x = x * 2;
 			let (piece1, piece2) = get_doubled_pieces(&board, x, y);
-			if piece1.is_other() {for (move_x, move_y, move_type) in get_other_moves(&board, piece1, x, y, game_flags) {
+			if piece1.is_white() {for (move_x, move_y, move_type) in get_white_moves(&board, piece1, x, y, game_flags) {
 				//move_count += 1;
 				let mut new_board = board;
 				let mut new_game_flags = game_flags;
@@ -132,14 +131,14 @@ fn try_other_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha
 				let move_score = if depth == 0 {
 					get_board_score(&new_board, true)
 				} else {
-					try_self_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth)
+					try_black_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth)
 				};
 				score = score.min(move_score);
 				beta = beta.min(move_score);
 				if beta <= alpha {return score;}
 			}}
 			let x = x + 1;
-			if piece2.is_other() {for (move_x, move_y, move_type) in get_other_moves(&board, piece2, x, y, game_flags) {
+			if piece2.is_white() {for (move_x, move_y, move_type) in get_white_moves(&board, piece2, x, y, game_flags) {
 				//move_count += 1;
 				let mut new_board = board;
 				let mut new_game_flags = game_flags;
@@ -147,7 +146,7 @@ fn try_other_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha
 				let move_score = if depth == 0 {
 					get_board_score(&new_board, true)
 				} else {
-					try_self_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth)
+					try_black_moves(new_board, ending_millis, new_game_flags, alpha, beta, depth)
 				};
 				score = score.min(move_score);
 				beta = beta.min(move_score);
@@ -171,36 +170,36 @@ fn perform_move(board: &mut Board, game_flags: &mut u8, piece: Piece, from_x: u8
 		}
 		SpecialMove::CastleKingsSide => {
 			set_piece(board, 7, to_y, Piece::None);
-			set_piece(board, 5, to_y, Piece::SelfRook.copy_owner(piece));
-			*game_flags &= if piece.is_other() {0b11111100} else {0b11110011};
+			set_piece(board, 5, to_y, Piece::BlackRook.copy_owner(piece));
+			*game_flags &= if piece.is_white() {0b11111100} else {0b11110011};
 		}
 		SpecialMove::CastleQueensSide => {
 			set_piece(board, 0, to_y, Piece::None);
-			set_piece(board, 3, to_y, Piece::SelfRook.copy_owner(piece));
-			*game_flags &= if piece.is_other() {0b11111100} else {0b11110011};
+			set_piece(board, 3, to_y, Piece::BlackRook.copy_owner(piece));
+			*game_flags &= if piece.is_white() {0b11111100} else {0b11110011};
 		}
 		SpecialMove::PromoteKnight => {
-			set_piece(board, to_x, to_y, Piece::OtherKnight.copy_owner(piece));
+			set_piece(board, to_x, to_y, Piece::WhiteKnight.copy_owner(piece));
 		}
 		SpecialMove::PromoteBishop => {
-			set_piece(board, to_x, to_y, Piece::OtherBishop.copy_owner(piece));
+			set_piece(board, to_x, to_y, Piece::WhiteBishop.copy_owner(piece));
 		}
 		SpecialMove::PromoteRook => {
-			set_piece(board, to_x, to_y, Piece::OtherRook.copy_owner(piece));
+			set_piece(board, to_x, to_y, Piece::WhiteRook.copy_owner(piece));
 		}
 		SpecialMove::PromoteQueen => {
-			set_piece(board, to_x, to_y, Piece::OtherQueen.copy_owner(piece));
+			set_piece(board, to_x, to_y, Piece::WhiteQueen.copy_owner(piece));
 		}
 	}
-	if piece as u8 & 0b111 == Piece::SelfPawn as u8 && to_y.abs_diff(from_y) == 2 {
+	if piece as u8 & 0b111 == Piece::BlackPawn as u8 && to_y.abs_diff(from_y) == 2 {
 		*game_flags |= (to_x << 5) | 0b00010000; // allow en passant for next move
 	}
 }
 
 
 
-static mut SELF_PAWN_ATTACK_SQUARES: [u64; 64] = [0; 64];
-static mut OTHER_PAWN_ATTACK_SQUARES: [u64; 64] = [0; 64];
+static mut BLACK_PAWN_ATTACK_SQUARES: [u64; 64] = [0; 64];
+static mut WHITE_PAWN_ATTACK_SQUARES: [u64; 64] = [0; 64];
 static mut KNIGHT_ATTACK_SQUARES: [u64; 64] = [0; 64];
 static mut BISHOP_ATTACK_SQUARES: [[u64; 64]; 13] = [[0; 64]; 13];
 static mut BISHOP_ATTACK_BLOCKERS: [[u64; 64]; 13] = [[0; 64]; 13];
@@ -218,15 +217,15 @@ fn init_attack_squares() {
 		for x in 0..8 {
 			for y in 0..8 {
 				let i = (x + y * 8) as usize;
-				// self pawns
+				// black pawns
 				if y <= 6 {
-					if x >= 1 {SELF_PAWN_ATTACK_SQUARES[i] |= bit(x - 1, y + 1);}
-					if x <= 6 {SELF_PAWN_ATTACK_SQUARES[i] |= bit(x + 1, y + 1);}
+					if x >= 1 {BLACK_PAWN_ATTACK_SQUARES[i] |= bit(x - 1, y + 1);}
+					if x <= 6 {BLACK_PAWN_ATTACK_SQUARES[i] |= bit(x + 1, y + 1);}
 				}
-				// other pawns
+				// white pawns
 				if y <= 6 {
-					if x >= 1 {OTHER_PAWN_ATTACK_SQUARES[i] |= bit(x - 1, y + 1);}
-					if x <= 6 {OTHER_PAWN_ATTACK_SQUARES[i] |= bit(x + 1, y + 1);}
+					if x >= 1 {WHITE_PAWN_ATTACK_SQUARES[i] |= bit(x - 1, y + 1);}
+					if x <= 6 {WHITE_PAWN_ATTACK_SQUARES[i] |= bit(x + 1, y + 1);}
 				}
 				// knights
 				if x >= 1 && y <= 5 {KNIGHT_ATTACK_SQUARES[i] |= bit(x - 1, y + 2);}
@@ -296,7 +295,7 @@ fn init_attack_squares() {
 	}
 }
 
-static SELF_PAWN_SCORES: [f32; 64] = [
+static BLACK_PAWN_SCORES: [f32; 64] = [
 	1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 ,
 	1.5 , 1.5 , 1.5 , 1.5 , 1.5 , 1.5 , 1.5 , 1.5 ,
 	1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25,
@@ -306,7 +305,7 @@ static SELF_PAWN_SCORES: [f32; 64] = [
 	1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 ,
 	0.9 , 0.9 , 0.9 , 0.9 , 0.9 , 0.9 , 0.9 , 0.9 ,
 ];
-static SELF_KNIGHT_SCORES: [f32; 64] = [
+static BLACK_KNIGHT_SCORES: [f32; 64] = [
 	3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 ,
 	3.05, 3.05, 3.05, 3.05, 3.05, 3.05, 3.05, 3.05,
 	3.05, 3.1 , 3.1 , 3.1 , 3.1 , 3.1 , 3.1 , 3.05,
@@ -316,7 +315,7 @@ static SELF_KNIGHT_SCORES: [f32; 64] = [
 	3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 ,
 	2.9 , 2.9 , 2.9 , 2.9 , 2.9 , 2.9 , 2.9 , 2.9 ,
 ];
-static SELF_KING_SCORES: [f32; 64] = [
+static BLACK_KING_SCORES: [f32; 64] = [
 	1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6,
 	1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6,
 	1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6,
@@ -326,7 +325,7 @@ static SELF_KING_SCORES: [f32; 64] = [
 	1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4,
 	1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0,
 ];
-static OTHER_PAWN_SCORES: [f32; 64] = [
+static WHITE_PAWN_SCORES: [f32; 64] = [
 	0.9 , 0.9 , 0.9 , 0.9 , 0.9 , 0.9 , 0.9 , 0.9 ,
 	1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 ,
 	1.05, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05,
@@ -336,7 +335,7 @@ static OTHER_PAWN_SCORES: [f32; 64] = [
 	1.5 , 1.5 , 1.5 , 1.5 , 1.5 , 1.5 , 1.5 , 1.5 ,
 	1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 ,
 ];
-static OTHER_KNIGHT_SCORES: [f32; 64] = [
+static WHITE_KNIGHT_SCORES: [f32; 64] = [
 	2.9 , 2.9 , 2.9 , 2.9 , 2.9 , 2.9 , 2.9 , 2.9 ,
 	3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 ,
 	3.05, 3.05, 3.05, 3.05, 3.05, 3.05, 3.05, 3.05,
@@ -346,7 +345,7 @@ static OTHER_KNIGHT_SCORES: [f32; 64] = [
 	3.05, 3.05, 3.05, 3.05, 3.05, 3.05, 3.05, 3.05,
 	3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 , 3.0 ,
 ];
-static OTHER_KING_SCORES: [f32; 64] = [
+static WHITE_KING_SCORES: [f32; 64] = [
 	1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0, 1000000.0 - 0.0,
 	1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4, 1000000.0 - 0.4,
 	1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6,
@@ -371,46 +370,46 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 				let (piece1, piece2) = get_doubled_pieces(board, x * 2, y);
 				let i = (x * 2 + y * 8) as usize;
 				match piece1 {
-					Piece::SelfPawn => unsafe {attacked_squares |= SELF_PAWN_ATTACK_SQUARES[i];}
-					Piece::SelfKnight => unsafe {attacked_squares |= KNIGHT_ATTACK_SQUARES[i];}
-					Piece::SelfBishop => unsafe {
+					Piece::BlackPawn => unsafe {attacked_squares |= BLACK_PAWN_ATTACK_SQUARES[i];}
+					Piece::BlackKnight => unsafe {attacked_squares |= KNIGHT_ATTACK_SQUARES[i];}
+					Piece::BlackBishop => unsafe {
 						for i2 in 0..13 {
 							if filled_squares & BISHOP_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= BISHOP_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::SelfRook => unsafe {
+					Piece::BlackRook => unsafe {
 						for i2 in 0..14 {
 							if filled_squares & ROOK_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= ROOK_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::SelfQueen => unsafe {
+					Piece::BlackQueen => unsafe {
 						for i2 in 0..27 {
 							if filled_squares & QUEEN_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= QUEEN_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::SelfKing => unsafe {attacked_squares |= KING_ATTACK_SQUARES[i];}
+					Piece::BlackKing => unsafe {attacked_squares |= KING_ATTACK_SQUARES[i];}
 					_ => {}
 				}
 				let i = i + 1;
 				match piece2 {
-					Piece::SelfPawn => unsafe {attacked_squares |= SELF_PAWN_ATTACK_SQUARES[i];}
-					Piece::SelfKnight => unsafe {attacked_squares |= KNIGHT_ATTACK_SQUARES[i];}
-					Piece::SelfBishop => unsafe {
+					Piece::BlackPawn => unsafe {attacked_squares |= BLACK_PAWN_ATTACK_SQUARES[i];}
+					Piece::BlackKnight => unsafe {attacked_squares |= KNIGHT_ATTACK_SQUARES[i];}
+					Piece::BlackBishop => unsafe {
 						for i2 in 0..13 {
 							if filled_squares & BISHOP_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= BISHOP_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::SelfRook => unsafe {
+					Piece::BlackRook => unsafe {
 						for i2 in 0..14 {
 							if filled_squares & ROOK_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= ROOK_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::SelfQueen => unsafe {
+					Piece::BlackQueen => unsafe {
 						for i2 in 0..27 {
 							if filled_squares & QUEEN_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= QUEEN_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::SelfKing => unsafe {attacked_squares |= KING_ATTACK_SQUARES[i];}
+					Piece::BlackKing => unsafe {attacked_squares |= KING_ATTACK_SQUARES[i];}
 					_ => {}
 				}
 			}
@@ -421,46 +420,46 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 				let (piece1, piece2) = get_doubled_pieces(board, x * 2, y);
 				let i = (x * 2 + y * 8) as usize;
 				match piece1 {
-					Piece::OtherPawn => unsafe {attacked_squares |= OTHER_PAWN_ATTACK_SQUARES[i];}
-					Piece::OtherKnight => unsafe {attacked_squares |= KNIGHT_ATTACK_SQUARES[i];}
-					Piece::OtherBishop => unsafe {
+					Piece::WhitePawn => unsafe {attacked_squares |= WHITE_PAWN_ATTACK_SQUARES[i];}
+					Piece::WhiteKnight => unsafe {attacked_squares |= KNIGHT_ATTACK_SQUARES[i];}
+					Piece::WhiteBishop => unsafe {
 						for i2 in 0..13 {
 							if filled_squares & BISHOP_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= BISHOP_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::OtherRook => unsafe {
+					Piece::WhiteRook => unsafe {
 						for i2 in 0..14 {
 							if filled_squares & ROOK_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= ROOK_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::OtherQueen => unsafe {
+					Piece::WhiteQueen => unsafe {
 						for i2 in 0..27 {
 							if filled_squares & QUEEN_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= QUEEN_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::OtherKing => unsafe {attacked_squares |= KING_ATTACK_SQUARES[i];}
+					Piece::WhiteKing => unsafe {attacked_squares |= KING_ATTACK_SQUARES[i];}
 					_ => {}
 				}
 				let i = i + 1;
 				match piece2 {
-					Piece::OtherPawn => unsafe {attacked_squares |= OTHER_PAWN_ATTACK_SQUARES[i];}
-					Piece::OtherKnight => unsafe {attacked_squares |= KNIGHT_ATTACK_SQUARES[i];}
-					Piece::OtherBishop => unsafe {
+					Piece::WhitePawn => unsafe {attacked_squares |= WHITE_PAWN_ATTACK_SQUARES[i];}
+					Piece::WhiteKnight => unsafe {attacked_squares |= KNIGHT_ATTACK_SQUARES[i];}
+					Piece::WhiteBishop => unsafe {
 						for i2 in 0..13 {
 							if filled_squares & BISHOP_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= BISHOP_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::OtherRook => unsafe {
+					Piece::WhiteRook => unsafe {
 						for i2 in 0..14 {
 							if filled_squares & ROOK_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= ROOK_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::OtherQueen => unsafe {
+					Piece::WhiteQueen => unsafe {
 						for i2 in 0..27 {
 							if filled_squares & QUEEN_ATTACK_BLOCKERS[i2][i] == 0 {attacked_squares |= QUEEN_ATTACK_SQUARES[i2][i];}
 						}
 					}
-					Piece::OtherKing => unsafe {attacked_squares |= KING_ATTACK_SQUARES[i];}
+					Piece::WhiteKing => unsafe {attacked_squares |= KING_ATTACK_SQUARES[i];}
 					_ => {}
 				}
 			}
@@ -485,33 +484,33 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 			let i = (x * 2 + y * 8) as usize;
 			let is_under_attack = attacked_squares & (1 << (x * 2 + y * 8)) > 0;
 			match piece1 {
-				Piece::SelfPawn   if !is_under_attack => engine_score += SELF_PAWN_SCORES[i],
-				Piece::SelfKnight if !is_under_attack => engine_score += SELF_KNIGHT_SCORES[i],
-				Piece::SelfBishop if !is_under_attack => engine_score += 3.3,
-				Piece::SelfRook   if !is_under_attack => engine_score += 5.5,
-				Piece::SelfQueen  if !is_under_attack => engine_score += 9.9,
-				Piece::SelfKing   if !is_under_attack => {engine_score += SELF_KING_SCORES[i]; engine_has_king = true;}
-				Piece::OtherPawn   => player_score += OTHER_PAWN_SCORES[i],
-				Piece::OtherKnight => player_score += OTHER_KNIGHT_SCORES[i],
-				Piece::OtherBishop => player_score += 3.3,
-				Piece::OtherRook   => player_score += 5.5,
-				Piece::OtherQueen  => player_score += 9.9,
-				Piece::OtherKing   => {player_score += OTHER_KING_SCORES[i]; player_has_king = true;}
+				Piece::BlackPawn   if !is_under_attack => engine_score += BLACK_PAWN_SCORES[i],
+				Piece::BlackKnight if !is_under_attack => engine_score += BLACK_KNIGHT_SCORES[i],
+				Piece::BlackBishop if !is_under_attack => engine_score += 3.3,
+				Piece::BlackRook   if !is_under_attack => engine_score += 5.5,
+				Piece::BlackQueen  if !is_under_attack => engine_score += 9.9,
+				Piece::BlackKing   if !is_under_attack => {engine_score += BLACK_KING_SCORES[i]; engine_has_king = true;}
+				Piece::WhitePawn   => player_score += WHITE_PAWN_SCORES[i],
+				Piece::WhiteKnight => player_score += WHITE_KNIGHT_SCORES[i],
+				Piece::WhiteBishop => player_score += 3.3,
+				Piece::WhiteRook   => player_score += 5.5,
+				Piece::WhiteQueen  => player_score += 9.9,
+				Piece::WhiteKing   => {player_score += WHITE_KING_SCORES[i]; player_has_king = true;}
 				_ => {}
 			}
 			match piece2 {
-				Piece::SelfPawn   if !is_under_attack => engine_score += SELF_PAWN_SCORES[i + 1],
-				Piece::SelfKnight if !is_under_attack => engine_score += SELF_KNIGHT_SCORES[i + 1],
-				Piece::SelfBishop if !is_under_attack => engine_score += 3.3,
-				Piece::SelfRook   if !is_under_attack => engine_score += 5.5,
-				Piece::SelfQueen  if !is_under_attack => engine_score += 9.9,
-				Piece::SelfKing   if !is_under_attack => {engine_score += SELF_KING_SCORES[i + 1]; engine_has_king = true;}
-				Piece::OtherPawn   => player_score += OTHER_PAWN_SCORES[i + 1],
-				Piece::OtherKnight => player_score += OTHER_KNIGHT_SCORES[i + 1],
-				Piece::OtherBishop => player_score += 3.3,
-				Piece::OtherRook   => player_score += 5.5,
-				Piece::OtherQueen  => player_score += 9.9,
-				Piece::OtherKing   => {player_score += OTHER_KING_SCORES[i]; player_has_king = true;}
+				Piece::BlackPawn   if !is_under_attack => engine_score += BLACK_PAWN_SCORES[i + 1],
+				Piece::BlackKnight if !is_under_attack => engine_score += BLACK_KNIGHT_SCORES[i + 1],
+				Piece::BlackBishop if !is_under_attack => engine_score += 3.3,
+				Piece::BlackRook   if !is_under_attack => engine_score += 5.5,
+				Piece::BlackQueen  if !is_under_attack => engine_score += 9.9,
+				Piece::BlackKing   if !is_under_attack => {engine_score += BLACK_KING_SCORES[i + 1]; engine_has_king = true;}
+				Piece::WhitePawn   => player_score += WHITE_PAWN_SCORES[i + 1],
+				Piece::WhiteKnight => player_score += WHITE_KNIGHT_SCORES[i + 1],
+				Piece::WhiteBishop => player_score += 3.3,
+				Piece::WhiteRook   => player_score += 5.5,
+				Piece::WhiteQueen  => player_score += 9.9,
+				Piece::WhiteKing   => {player_score += WHITE_KING_SCORES[i]; player_has_king = true;}
 				_ => {}
 			}
 		}

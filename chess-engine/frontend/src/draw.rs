@@ -1,11 +1,8 @@
-use image::{EncodableLayout, ImageReader};
-use sdl3::{pixels::PixelFormat, sys::pixels::SDL_PixelFormat};
-
 use crate::*;
 
 
 
-pub fn draw<'a, 'b, Font: sdl3_text::ThreadSafeFont>(data: &mut AppData, canvas: &mut Canvas<Window>, texture_creator: &'a TextureCreator<WindowContext>, text_cache: &mut sdl3_text::TextCache<'a, Font>, textures: &'b Textures<'a>) -> Result<()> {
+pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &mut AppData, canvas: &mut Canvas<Window>, texture_creator: &'a TextureCreator<WindowContext>, text_cache: &mut sdl3_text::TextCache<'a, Font>, textures: &Textures<'a>) -> Result<()> {
 	canvas.set_draw_color(data.settings.background_color);
 	canvas.clear();
 	let (width, height) = canvas.output_size()?;
@@ -19,16 +16,12 @@ pub fn draw<'a, 'b, Font: sdl3_text::ThreadSafeFont>(data: &mut AppData, canvas:
 	canvas.fill_rect(FRect::new(0.0, 0.0, width, height * 0.08))?;
 	
 	// chess board
-	let mut board_rect = FRect::new(screen_mid.0 - height * 0.25, screen_mid.1 - height * 0.25, height * 0.5, height * 0.5);
+	let mut board_rect = FRect::new(screen_mid.0 - height * 0.26, screen_mid.1 - height * 0.26, height * 0.52, height * 0.52);
 	canvas.set_draw_color(data.settings.board_trim_color);
 	canvas.fill_rect(board_rect)?;
-	board_rect.x += height * 0.01;
-	board_rect.y += height * 0.01;
-	board_rect.w -= height * 0.02;
-	board_rect.h -= height * 0.02;
 	for x in 0..8 {
 		for y in 0..8 {
-			let pos = get_piece_pos(x, y, board_rect, width, height, screen_mid);
+			let pos = get_slot_screen_rect(x, y, data.window_size);
 			canvas.set_draw_color(if (x + y) % 2 == 1 {data.settings.board_color_dark} else {data.settings.board_color_light});
 			canvas.fill_rect(pos)?;
 			let piece = get_piece(&data.board, x, y, 123);
@@ -44,26 +37,21 @@ pub fn draw<'a, 'b, Font: sdl3_text::ThreadSafeFont>(data: &mut AppData, canvas:
 
 
 
-fn get_piece_pos(x: u8, y: u8, board_rect: FRect, width: f32, height: f32, screen_mid: (f32, f32)) -> FRect {
-	let slot_width = board_rect.w / 8.0;
-	FRect::new(board_rect.x + slot_width * x as f32, board_rect.y + slot_width * y as f32, slot_width, slot_width)
-}
-
 fn get_texture_for_piece<'a, 'b>(piece: Piece, textures: &'b Textures<'a>) -> Option<&'b Texture<'a>> {
 	Some(match piece {
 		Piece::None => return None,
-		Piece::OtherPawn => &textures.black_pawn,
-		Piece::OtherKnight => &textures.black_knight,
-		Piece::OtherBishop => &textures.black_bishop,
-		Piece::OtherRook => &textures.black_rook,
-		Piece::OtherQueen => &textures.black_queen,
-		Piece::OtherKing => &textures.black_king,
-		Piece::SelfPawn => &textures.white_pawn,
-		Piece::SelfKnight => &textures.white_knight,
-		Piece::SelfBishop => &textures.white_bishop,
-		Piece::SelfRook => &textures.white_rook,
-		Piece::SelfQueen => &textures.white_queen,
-		Piece::SelfKing => &textures.white_king,
+		Piece::BlackPawn => &textures.black_pawn,
+		Piece::BlackKnight => &textures.black_knight,
+		Piece::BlackBishop => &textures.black_bishop,
+		Piece::BlackRook => &textures.black_rook,
+		Piece::BlackQueen => &textures.black_queen,
+		Piece::BlackKing => &textures.black_king,
+		Piece::WhitePawn => &textures.white_pawn,
+		Piece::WhiteKnight => &textures.white_knight,
+		Piece::WhiteBishop => &textures.white_bishop,
+		Piece::WhiteRook => &textures.white_rook,
+		Piece::WhiteQueen => &textures.white_queen,
+		Piece::WhiteKing => &textures.white_king,
 	})
 }
 

@@ -7,3 +7,5 @@ edition = "2024"
 shared = { path = "../shared" }
 rayon = "1.11.0"
 smart-read = "0.9.0"
+crossterm = "0.29.0"
+colored = "2.2.0"

@@ -1,11 +1,10 @@
-use shared::*;
-use std::ops::Coroutine;
+use crate::*;
 
 
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 #[repr(u8)]
-pub(super) enum SpecialMove {
+pub enum SpecialMove {
 	None,
 	EnPassant,
 	CastleKingsSide,
@@ -16,12 +15,12 @@ pub(super) enum SpecialMove {
 	PromoteQueen,
 }
 
-// NOTE: this assumes that the engine cannot have any pawns on the first rank
-pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8) -> CoroutineIter<impl Coroutine<Yield = (u8, u8, SpecialMove), Return = ()>> {
+// NOTE: this assumes that black cannot have any pawns on the first rank
+pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8) -> CoroutineIter<impl Coroutine<Yield = (u8, u8, SpecialMove), Return = ()>> {
 	CoroutineIter (#[coroutine] move || {
 		match piece {
 			
-			Piece::SelfPawn => {
+			Piece::BlackPawn => {
 				if get_piece(board, x, y - 1, 8) == Piece::None {
 					if y == 6 && get_piece(board, x, 4, 9) == Piece::None {
 						yield (x, y - 1, SpecialMove::None);
@@ -35,7 +34,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 						yield (x, y - 1, SpecialMove::None);
 					}
 				}
-				if x >= 1 && get_piece(board, x - 1, y - 1, 10).is_other() {
+				if x >= 1 && get_piece(board, x - 1, y - 1, 10).is_white() {
 					if y == 1 {
 						yield (x - 1, y - 1, SpecialMove::PromoteKnight);
 						yield (x - 1, y - 1, SpecialMove::PromoteBishop);
@@ -45,7 +44,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 						yield (x - 1, y - 1, SpecialMove::None);
 					}
 				}
-				if x <= 6 && get_piece(board, x + 1, y - 1, 11).is_other() {
+				if x <= 6 && get_piece(board, x + 1, y - 1, 11).is_white() {
 					if y == 1 {
 						yield (x + 1, y - 1, SpecialMove::PromoteKnight);
 						yield (x + 1, y - 1, SpecialMove::PromoteBishop);
@@ -65,25 +64,25 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				}
 			}
 			
-			Piece::SelfKnight => {
-				if x >= 1 && y <= 5 && !get_piece(board, x - 1, y + 2, 12).is_self() {yield (x - 1, y + 2, SpecialMove::None);}
-				if x <= 6 && y <= 5 && !get_piece(board, x + 1, y + 2, 13).is_self() {yield (x + 1, y + 2, SpecialMove::None);}
-				if x <= 5 && y <= 6 && !get_piece(board, x + 2, y + 1, 14).is_self() {yield (x + 2, y + 1, SpecialMove::None);}
-				if x <= 5 && y >= 1 && !get_piece(board, x + 2, y - 1, 15).is_self() {yield (x + 2, y - 1, SpecialMove::None);}
-				if x <= 6 && y >= 2 && !get_piece(board, x + 1, y - 2, 16).is_self() {yield (x + 1, y - 2, SpecialMove::None);}
-				if x >= 1 && y >= 2 && !get_piece(board, x - 1, y - 2, 17).is_self() {yield (x - 1, y - 2, SpecialMove::None);}
-				if x >= 2 && y >= 1 && !get_piece(board, x - 2, y - 1, 18).is_self() {yield (x - 2, y - 1, SpecialMove::None);}
-				if x >= 2 && y <= 6 && !get_piece(board, x - 2, y + 1, 19).is_self() {yield (x - 2, y + 1, SpecialMove::None);}
+			Piece::BlackKnight => {
+				if x >= 1 && y <= 5 && !get_piece(board, x - 1, y + 2, 12).is_black() {yield (x - 1, y + 2, SpecialMove::None);}
+				if x <= 6 && y <= 5 && !get_piece(board, x + 1, y + 2, 13).is_black() {yield (x + 1, y + 2, SpecialMove::None);}
+				if x <= 5 && y <= 6 && !get_piece(board, x + 2, y + 1, 14).is_black() {yield (x + 2, y + 1, SpecialMove::None);}
+				if x <= 5 && y >= 1 && !get_piece(board, x + 2, y - 1, 15).is_black() {yield (x + 2, y - 1, SpecialMove::None);}
+				if x <= 6 && y >= 2 && !get_piece(board, x + 1, y - 2, 16).is_black() {yield (x + 1, y - 2, SpecialMove::None);}
+				if x >= 1 && y >= 2 && !get_piece(board, x - 1, y - 2, 17).is_black() {yield (x - 1, y - 2, SpecialMove::None);}
+				if x >= 2 && y >= 1 && !get_piece(board, x - 2, y - 1, 18).is_black() {yield (x - 2, y - 1, SpecialMove::None);}
+				if x >= 2 && y <= 6 && !get_piece(board, x - 2, y + 1, 19).is_black() {yield (x - 2, y + 1, SpecialMove::None);}
 			}
 			
-			Piece::SelfBishop => {
+			Piece::BlackBishop => {
 				let mut curr_x = x;
 				let mut curr_y = y;
 				while curr_x <= 6 && curr_y <= 6 {
 					curr_x += 1;
 					curr_y += 1;
 					let piece = get_piece(board, curr_x, curr_y, 20);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -99,7 +98,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 					curr_x += 1;
 					curr_y -= 1;
 					let piece = get_piece(board, curr_x, curr_y, 21);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -115,7 +114,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 					curr_x -= 1;
 					curr_y -= 1;
 					let piece = get_piece(board, curr_x, curr_y, 22);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -131,7 +130,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 					curr_x -= 1;
 					curr_y += 1;
 					let piece = get_piece(board, curr_x, curr_y, 23);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -143,12 +142,12 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				}
 			}
 			
-			Piece::SelfRook => {
+			Piece::BlackRook => {
 				let mut curr_x = x;
 				while curr_x <= 6 {
 					curr_x += 1;
 					let piece = get_piece(board, curr_x, y, 24);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
 					}
@@ -162,7 +161,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				while curr_x >= 1 {
 					curr_x -= 1;
 					let piece = get_piece(board, curr_x, y, 25);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
 					}
@@ -176,7 +175,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				while curr_y <= 6 {
 					curr_y += 1;
 					let piece = get_piece(board, x, curr_y, 26);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -190,7 +189,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				while curr_y >= 1 {
 					curr_y -= 1;
 					let piece = get_piece(board, x, curr_y, 27);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -202,14 +201,14 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				}
 			}
 			
-			Piece::SelfQueen => {
+			Piece::BlackQueen => {
 				let mut curr_x = x;
 				let mut curr_y = y;
 				while curr_x <= 6 && curr_y <= 6 {
 					curr_x += 1;
 					curr_y += 1;
 					let piece = get_piece(board, curr_x, curr_y, 28);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -225,7 +224,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 					curr_x += 1;
 					curr_y -= 1;
 					let piece = get_piece(board, curr_x, curr_y, 29);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -241,7 +240,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 					curr_x -= 1;
 					curr_y -= 1;
 					let piece = get_piece(board, curr_x, curr_y, 30);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -257,7 +256,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 					curr_x -= 1;
 					curr_y += 1;
 					let piece = get_piece(board, curr_x, curr_y, 31);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -271,7 +270,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				while curr_x <= 6 {
 					curr_x += 1;
 					let piece = get_piece(board, curr_x, y, 32);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
 					}
@@ -285,7 +284,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				while curr_x >= 1 {
 					curr_x -= 1;
 					let piece = get_piece(board, curr_x, y, 33);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
 					}
@@ -299,7 +298,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				while curr_y <= 6 {
 					curr_y += 1;
 					let piece = get_piece(board, x, curr_y, 34);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -313,7 +312,7 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				while curr_y >= 1 {
 					curr_y -= 1;
 					let piece = get_piece(board, x, curr_y, 35);
-					if piece.is_other() {
+					if piece.is_white() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -325,14 +324,14 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 				}
 			}
 			
-			Piece::SelfKing => {
+			Piece::BlackKing => {
 				let x_min = x.max(1) - 1;
 				let y_min = y.max(1) - 1;
 				let x_max = x.min(6) + 1;
 				let y_max = y.min(6) + 1;
 				for x in x_min..=x_max {
 					for y in y_min..=y_max {
-						if !get_piece(board, x, y, 36).is_self() {
+						if !get_piece(board, x, y, 36).is_black() {
 							yield (x, y, SpecialMove::None);
 						}
 					}
@@ -352,12 +351,12 @@ pub(super) fn get_self_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fla
 
 
 
-// NOTE: this assumes that the player cannot have any pawns on the eighth rank
-pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8) -> CoroutineIter<impl Coroutine<Yield = (u8, u8, SpecialMove), Return = ()>> {
+// NOTE: this assumes that white cannot have any pawns on the eighth rank
+pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8) -> CoroutineIter<impl Coroutine<Yield = (u8, u8, SpecialMove), Return = ()>> {
 	CoroutineIter (#[coroutine] move || {
 		match piece {
 			
-			Piece::OtherPawn => {
+			Piece::WhitePawn => {
 				if get_piece(board, x, y + 1, 37) == Piece::None {
 					if y == 1 && get_piece(board, x, 3, 38) == Piece::None {
 						yield (x, y + 1, SpecialMove::None);
@@ -371,7 +370,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 						yield (x, y + 1, SpecialMove::None);
 					}
 				}
-				if x >= 1 && get_piece(board, x - 1, y + 1, 39).is_self() {
+				if x >= 1 && get_piece(board, x - 1, y + 1, 39).is_black() {
 					if y == 6 {
 						yield (x - 1, y + 1, SpecialMove::PromoteKnight);
 						yield (x - 1, y + 1, SpecialMove::PromoteBishop);
@@ -381,7 +380,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 						yield (x - 1, y + 1, SpecialMove::None);
 					}
 				}
-				if x <= 6 && get_piece(board, x + 1, y + 1, 40).is_self() {
+				if x <= 6 && get_piece(board, x + 1, y + 1, 40).is_black() {
 					if y == 6 {
 						yield (x + 1, y + 1, SpecialMove::PromoteKnight);
 						yield (x + 1, y + 1, SpecialMove::PromoteBishop);
@@ -401,25 +400,25 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				}
 			}
 			
-			Piece::OtherKnight => {
-				if x >= 1 && y <= 5 && !get_piece(board, x - 1, y + 2, 41).is_other() {yield (x - 1, y + 2, SpecialMove::None);}
-				if x <= 6 && y <= 5 && !get_piece(board, x + 1, y + 2, 42).is_other() {yield (x + 1, y + 2, SpecialMove::None);}
-				if x <= 5 && y <= 6 && !get_piece(board, x + 2, y + 1, 43).is_other() {yield (x + 2, y + 1, SpecialMove::None);}
-				if x <= 5 && y >= 1 && !get_piece(board, x + 2, y - 1, 44).is_other() {yield (x + 2, y - 1, SpecialMove::None);}
-				if x <= 6 && y >= 2 && !get_piece(board, x + 1, y - 2, 45).is_other() {yield (x + 1, y - 2, SpecialMove::None);}
-				if x >= 1 && y >= 2 && !get_piece(board, x - 1, y - 2, 46).is_other() {yield (x - 1, y - 2, SpecialMove::None);}
-				if x >= 2 && y >= 1 && !get_piece(board, x - 2, y - 1, 47).is_other() {yield (x - 2, y - 1, SpecialMove::None);}
-				if x >= 2 && y <= 6 && !get_piece(board, x - 2, y + 1, 48).is_other() {yield (x - 2, y + 1, SpecialMove::None);}
+			Piece::WhiteKnight => {
+				if x >= 1 && y <= 5 && !get_piece(board, x - 1, y + 2, 41).is_white() {yield (x - 1, y + 2, SpecialMove::None);}
+				if x <= 6 && y <= 5 && !get_piece(board, x + 1, y + 2, 42).is_white() {yield (x + 1, y + 2, SpecialMove::None);}
+				if x <= 5 && y <= 6 && !get_piece(board, x + 2, y + 1, 43).is_white() {yield (x + 2, y + 1, SpecialMove::None);}
+				if x <= 5 && y >= 1 && !get_piece(board, x + 2, y - 1, 44).is_white() {yield (x + 2, y - 1, SpecialMove::None);}
+				if x <= 6 && y >= 2 && !get_piece(board, x + 1, y - 2, 45).is_white() {yield (x + 1, y - 2, SpecialMove::None);}
+				if x >= 1 && y >= 2 && !get_piece(board, x - 1, y - 2, 46).is_white() {yield (x - 1, y - 2, SpecialMove::None);}
+				if x >= 2 && y >= 1 && !get_piece(board, x - 2, y - 1, 47).is_white() {yield (x - 2, y - 1, SpecialMove::None);}
+				if x >= 2 && y <= 6 && !get_piece(board, x - 2, y + 1, 48).is_white() {yield (x - 2, y + 1, SpecialMove::None);}
 			}
 			
-			Piece::OtherBishop => {
+			Piece::WhiteBishop => {
 				let mut curr_x = x;
 				let mut curr_y = y;
 				while curr_x <= 6 && curr_y <= 6 {
 					curr_x += 1;
 					curr_y += 1;
 					let piece = get_piece(board, curr_x, curr_y, 49);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -435,7 +434,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 					curr_x += 1;
 					curr_y -= 1;
 					let piece = get_piece(board, curr_x, curr_y, 50);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -451,7 +450,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 					curr_x -= 1;
 					curr_y -= 1;
 					let piece = get_piece(board, curr_x, curr_y, 51);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -467,7 +466,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 					curr_x -= 1;
 					curr_y += 1;
 					let piece = get_piece(board, curr_x, curr_y, 52);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -479,12 +478,12 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				}
 			}
 			
-			Piece::OtherRook => {
+			Piece::WhiteRook => {
 				let mut curr_x = x;
 				while curr_x <= 6 {
 					curr_x += 1;
 					let piece = get_piece(board, curr_x, y, 53);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
 					}
@@ -498,7 +497,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				while curr_x >= 1 {
 					curr_x -= 1;
 					let piece = get_piece(board, curr_x, y, 54);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
 					}
@@ -512,7 +511,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				while curr_y <= 6 {
 					curr_y += 1;
 					let piece = get_piece(board, x, curr_y, 55);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -526,7 +525,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				while curr_y >= 1 {
 					curr_y -= 1;
 					let piece = get_piece(board, x, curr_y, 56);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -538,14 +537,14 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				}
 			}
 			
-			Piece::OtherQueen => {
+			Piece::WhiteQueen => {
 				let mut curr_x = x;
 				let mut curr_y = y;
 				while curr_x <= 6 && curr_y <= 6 {
 					curr_x += 1;
 					curr_y += 1;
 					let piece = get_piece(board, curr_x, curr_y, 57);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -561,7 +560,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 					curr_x += 1;
 					curr_y -= 1;
 					let piece = get_piece(board, curr_x, curr_y, 58);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -577,7 +576,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 					curr_x -= 1;
 					curr_y -= 1;
 					let piece = get_piece(board, curr_x, curr_y, 59);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -593,7 +592,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 					curr_x -= 1;
 					curr_y += 1;
 					let piece = get_piece(board, curr_x, curr_y, 60);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -607,7 +606,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				while curr_x <= 6 {
 					curr_x += 1;
 					let piece = get_piece(board, curr_x, y, 61);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
 					}
@@ -621,7 +620,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				while curr_x >= 1 {
 					curr_x -= 1;
 					let piece = get_piece(board, curr_x, y, 62);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
 					}
@@ -635,7 +634,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				while curr_y <= 6 {
 					curr_y += 1;
 					let piece = get_piece(board, x, curr_y, 63);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -649,7 +648,7 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				while curr_y >= 1 {
 					curr_y -= 1;
 					let piece = get_piece(board, x, curr_y, 64);
-					if piece.is_self() {
+					if piece.is_black() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
 					}
@@ -661,14 +660,14 @@ pub(super) fn get_other_moves(board: &Board, piece: Piece, x: u8, y: u8, game_fl
 				}
 			}
 			
-			Piece::OtherKing => {
+			Piece::WhiteKing => {
 				let x_min = x.max(1) - 1;
 				let y_min = y.max(1) - 1;
 				let x_max = x.min(6) + 1;
 				let y_max = y.min(6) + 1;
 				for x in x_min..=x_max {
 					for y in y_min..=y_max {
-						if !get_piece(board, x, y, 65).is_other() {
+						if !get_piece(board, x, y, 65).is_white() {
 							yield (x, y, SpecialMove::None);
 						}
 					}

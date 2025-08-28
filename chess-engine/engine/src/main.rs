@@ -1,9 +1,15 @@
+// !!!!!!!!!! NOTE: THIS FILE IS OLD AND ONLY USED FOR DEBUG WHILE THE FRONTEND IS BEING MADE !!!!!!!!!! //
+
+
+
 #![allow(unused)]
 #![warn(unused_must_use)]
 
 #![feature(coroutines)]
 #![feature(coroutine_trait)]
 
+use colored::{Color, Colorize};
+use crossterm::{cursor, execute, terminal};
 use shared::*;
 pub use std::{time::Instant, io::{Write, Stdout}, thread, time::Duration};
 pub use smart_read::prelude::*;
@@ -11,8 +17,200 @@ pub use smart_read::prelude::*;
 
 
 pub mod engine;
-pub mod utils;
-pub use utils::*;
+//pub mod utils;
+//pub use utils::*;
+
+//use crate::*;
+use std::{ops::{Coroutine, CoroutineState}, pin::Pin};
+
+const BACKGROUND_COLOR_1: Color = Color::TrueColor { r: 95, g: 95, b: 95 };
+const BACKGROUND_COLOR_2: Color = Color::TrueColor { r: 159, g: 159, b: 159 };
+const BLACK_COLOR: Color = Color::TrueColor { r: 0, g: 0, b: 0 };
+const WHITE_COLOR: Color = Color::TrueColor { r: 255, g: 255, b: 255 };
+
+
+
+#[macro_export]
+macro_rules! output {
+	($stdout:expr, $line:expr $(, $format:expr)+) => {
+		execute!($stdout, crossterm::cursor::MoveTo(0, $line), crossterm::terminal::Clear(crossterm::terminal::ClearType::CurrentLine))?;
+		write!($stdout $(, $format)+)?;
+		$stdout.flush()?;
+	};
+}
+
+pub fn time_to_string(time: usize) -> String {
+	let time = time / 1000;
+	let minutes = time / 60;
+	let seconds = time % 60;
+	if minutes == 0 {
+		format!("0:{seconds:02}")
+	} else {
+		format!("{minutes}:{seconds:02}")
+	}
+}
+
+pub fn pluralize(value: usize, singular: &str, plural: &str) -> String {
+	if value == 1 {format!("{value} {singular}")} else {format!("{value} {plural}")}
+}
+
+
+
+pub struct CoroutineIter<G> (pub G);
+
+impl<G, Y, R> Iterator for CoroutineIter<G>
+where
+	G: Coroutine<Yield = Y, Return = R> + Unpin,
+{
+	type Item = Y;
+	
+	fn next(&mut self) -> Option<Self::Item> {
+		match Pin::new(&mut self.0).resume(()) {
+			CoroutineState::Yielded(val) => Some(val),
+			CoroutineState::Complete(_) => None,
+		}
+	}
+}
+
+
+
+trait PieceFns {
+	fn print_self(&self, color: Color, out: &mut Stdout) -> Result<(), Box<dyn std::error::Error>>;
+}
+
+impl PieceFns for Piece {
+	fn print_self(&self, background_color: Color, stdout: &mut Stdout) -> Result<(), Box<dyn std::error::Error>> {
+		match self {
+			Self::None => write!(stdout, "{}", "  ".on_color(background_color))?,
+			Self::BlackPawn    => write!(stdout, "{}", "Pw".color(BLACK_COLOR).on_color(background_color))?,
+			Self::BlackKnight  => write!(stdout, "{}", "Kn".color(BLACK_COLOR).on_color(background_color))?,
+			Self::BlackBishop  => write!(stdout, "{}", "Bp".color(BLACK_COLOR).on_color(background_color))?,
+			Self::BlackRook    => write!(stdout, "{}", "Rk".color(BLACK_COLOR).on_color(background_color))?,
+			Self::BlackQueen   => write!(stdout, "{}", "Qn".color(BLACK_COLOR).on_color(background_color))?,
+			Self::BlackKing    => write!(stdout, "{}", "Ki".color(BLACK_COLOR).on_color(background_color))?,
+			Self::WhitePawn   => write!(stdout, "{}", "Pw".color(WHITE_COLOR).on_color(background_color))?,
+			Self::WhiteKnight => write!(stdout, "{}", "Kn".color(WHITE_COLOR).on_color(background_color))?,
+			Self::WhiteBishop => write!(stdout, "{}", "Bp".color(WHITE_COLOR).on_color(background_color))?,
+			Self::WhiteRook   => write!(stdout, "{}", "Rk".color(WHITE_COLOR).on_color(background_color))?,
+			Self::WhiteQueen  => write!(stdout, "{}", "Qn".color(WHITE_COLOR).on_color(background_color))?,
+			Self::WhiteKing   => write!(stdout, "{}", "Ki".color(WHITE_COLOR).on_color(background_color))?,
+		}
+		Ok(())
+	}
+}
+
+pub fn print_board(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dyn std::error::Error>> {
+	execute!(stdout, crossterm::cursor::MoveTo(0, 0))?;
+	stdout.flush()?;
+	print_board_here(board, stdout)
+}
+	
+pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dyn std::error::Error>> {
+	write!(stdout, "  ")?;
+	for x in 0..32 {
+		let background_color = if x % 8 < 4 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
+		write!(stdout, "{}", "\u{2584}".color(background_color))?;
+	}
+	write!(stdout, "\n8 ")?;
+	for x in 0..8 {
+		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
+		write!(stdout, "{}", " ".on_color(background_color))?;
+		get_piece(board, x, 7, 0).print_self(background_color, stdout)?;
+		write!(stdout, "{}", " ".on_color(background_color))?;
+	}
+	write!(stdout, "\n  ")?;
+	for x in 0..32 {
+		let text = if x % 8 < 4 {"\u{2580}"} else {"\u{2584}"};
+		write!(stdout, "{}", text.color(BACKGROUND_COLOR_1).on_color(BACKGROUND_COLOR_2))?;
+	}
+	write!(stdout, "\n7 ")?;
+	for x in 0..8 {
+		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
+		write!(stdout, "{}", " ".on_color(background_color))?;
+		get_piece(board, x, 6, 1).print_self(background_color, stdout)?;
+		write!(stdout, "{}", " ".on_color(background_color))?;
+	}
+	write!(stdout, "\n  ")?;
+	for x in 0..32 {
+		let text = if x % 8 < 4 {"\u{2584}"} else {"\u{2580}"};
+		write!(stdout, "{}", text.color(BACKGROUND_COLOR_1).on_color(BACKGROUND_COLOR_2))?;
+	}
+	write!(stdout, "\n6 ")?;
+	for x in 0..8 {
+		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
+		write!(stdout, "{}", " ".on_color(background_color))?;
+		get_piece(board, x, 5, 2).print_self(background_color, stdout)?;
+		write!(stdout, "{}", " ".on_color(background_color))?;
+	}
+	write!(stdout, "\n  ")?;
+	for x in 0..32 {
+		let text = if x % 8 < 4 {"\u{2580}"} else {"\u{2584}"};
+		write!(stdout, "{}", text.color(BACKGROUND_COLOR_1).on_color(BACKGROUND_COLOR_2))?;
+	}
+	write!(stdout, "\n5 ")?;
+	for x in 0..8 {
+		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
+		write!(stdout, "{}", " ".on_color(background_color))?;
+		get_piece(board, x, 4, 3).print_self(background_color, stdout)?;
+		write!(stdout, "{}", " ".on_color(background_color))?;
+	}
+	write!(stdout, "\n  ")?;
+	for x in 0..32 {
+		let text = if x % 8 < 4 {"\u{2584}"} else {"\u{2580}"};
+		write!(stdout, "{}", text.color(BACKGROUND_COLOR_1).on_color(BACKGROUND_COLOR_2))?;
+	}
+	write!(stdout, "\n4 ")?;
+	for x in 0..8 {
+		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
+		write!(stdout, "{}", " ".on_color(background_color))?;
+		get_piece(board, x, 3, 4).print_self(background_color, stdout)?;
+		write!(stdout, "{}", " ".on_color(background_color))?;
+	}
+	write!(stdout, "\n  ")?;
+	for x in 0..32 {
+		let text = if x % 8 < 4 {"\u{2580}"} else {"\u{2584}"};
+		write!(stdout, "{}", text.color(BACKGROUND_COLOR_1).on_color(BACKGROUND_COLOR_2))?;
+	}
+	write!(stdout, "\n3 ")?;
+	for x in 0..8 {
+		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
+		write!(stdout, "{}", " ".on_color(background_color))?;
+		get_piece(board, x, 2, 5).print_self(background_color, stdout)?;
+		write!(stdout, "{}", " ".on_color(background_color))?;
+	}
+	write!(stdout, "\n  ")?;
+	for x in 0..32 {
+		let text = if x % 8 < 4 {"\u{2584}"} else {"\u{2580}"};
+		write!(stdout, "{}", text.color(BACKGROUND_COLOR_1).on_color(BACKGROUND_COLOR_2))?;
+	}
+	write!(stdout, "\n2 ")?;
+	for x in 0..8 {
+		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
+		write!(stdout, "{}", " ".on_color(background_color))?;
+		get_piece(board, x, 1, 6).print_self(background_color, stdout)?;
+		write!(stdout, "{}", " ".on_color(background_color))?;
+	}
+	write!(stdout, "\n  ")?;
+	for x in 0..32 {
+		let text = if x % 8 < 4 {"\u{2580}"} else {"\u{2584}"};
+		write!(stdout, "{}", text.color(BACKGROUND_COLOR_1).on_color(BACKGROUND_COLOR_2))?;
+	}
+	write!(stdout, "\n1 ")?;
+	for x in 0..8 {
+		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
+		write!(stdout, "{}", " ".on_color(background_color))?;
+		get_piece(board, x, 0, 7).print_self(background_color, stdout)?;
+		write!(stdout, "{}", " ".on_color(background_color))?;
+	}
+	write!(stdout, "\n  ")?;
+	for x in 0..32 {
+		let background_color = if x % 8 < 4 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
+		write!(stdout, "{}", "\u{2580}".color(background_color))?;
+	}
+	write!(stdout, "\n   a   b   c   d   e   f   g   h\n")?;
+	stdout.flush()?;
+	Ok(())
+}
 
 
 
@@ -59,7 +257,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let mut board = default_board();
 	let mut player_won = false;
 	let mut time_data = if starting_time > 0 {Some((starting_time, starting_time, bonus_time))} else {None};
-	let mut prev_board_state = board.clone();
+	let prev_board_state = board;
 	let mut game_flags = 0b00001111; // flags: 0: can castle with player left rook, 1: can castle with player right rook, 2: can castle with engine left rook, 3: can castle with engine right rook, 4: can en passant, 5-7: en passant file
 	
 	//print_board(&board, &mut stdout)?;
@@ -73,7 +271,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		
 		// display game
 		print_board(&board, &mut stdout)?;
-		if let Some((player_time, engine_time, bonus_time)) = time_data {
+		if let Some((player_time, engine_time, _bonus_time)) = time_data {
 			output!(stdout, 18, "Your time: {}", time_to_string(player_time));
 			output!(stdout, 19, "Engine's time: {}", time_to_string(engine_time));
 		}
@@ -85,7 +283,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			output!(stdout, 20, "Enter your move: ");
 			let start = Instant::now();
 			let player_move = read!();
-			if let Some((player_time, engine_time, bonus_time)) = &mut time_data {
+			if let Some((player_time, _engine_time, bonus_time)) = &mut time_data {
 				let time_taken = start.elapsed().as_millis() as usize;
 				if *player_time < time_taken {
 					output!(stdout, 21, "You have lost on time");
@@ -95,7 +293,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 				*player_time -= time_taken;
 				*player_time += *bonus_time + 2000;
 			}
-			if let Some((player_time, engine_time, bonus_time)) = time_data {
+			if let Some((player_time, engine_time, _bonus_time)) = time_data {
 				output!(stdout, 18, "Your time: {}", time_to_string(player_time));
 				output!(stdout, 19, "Engine's time: {}", time_to_string(engine_time));
 			}
@@ -113,24 +311,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			if to_rank > 7 {output!(stdout, 21, "Invalid input, ending rank must be '1' through '8'"); continue 'player_move;}
 			if to_file == from_file && to_rank == from_rank {output!(stdout, 21, "Invalid input, cannot move piece to itself"); continue 'player_move;}
 			let from_piece = get_piece(&board, from_file, from_rank, 68);
-			if !from_piece.is_other() {output!(stdout, 21, "Invalid input, you do not have a piece at {}{}", player_move_chars[0], player_move_chars[1]); continue 'player_move;}
+			if !from_piece.is_white() {output!(stdout, 21, "Invalid input, you do not have a piece at {}{}", player_move_chars[0], player_move_chars[1]); continue 'player_move;}
 			let to_piece = get_piece(&board, to_file, to_rank, 69);
-			if to_piece.is_other() {output!(stdout, 21, "Invalid input, you already have a piece at {}{}", player_move_chars[2], player_move_chars[3]); continue 'player_move;}
+			if to_piece.is_white() {output!(stdout, 21, "Invalid input, you already have a piece at {}{}", player_move_chars[2], player_move_chars[3]); continue 'player_move;}
 			
 			//let is_slot_under_attack = |x: u8, y: u8| {
 			//	// pawns
-			//	if (x >= 1 && y <= 6 && get_piece(&board, x - 1, y + 1, 70) == Piece::SelfPawn)
-			//	|| (x <= 6 && y <= 6 && get_piece(&board, x + 1, y + 1, 71) == Piece::SelfPawn)
+			//	if (x >= 1 && y <= 6 && get_piece(&board, x - 1, y + 1, 70) == Piece::BlackPawn)
+			//	|| (x <= 6 && y <= 6 && get_piece(&board, x + 1, y + 1, 71) == Piece::BlackPawn)
 			//	{return true;}
 			//	// knights
-			//	if (x >= 1 && y <= 5 && get_piece(&board, x - 1, y + 2, 72) == Piece::SelfKnight)
-			//	|| (x <= 6 && y <= 5 && get_piece(&board, x + 1, y + 2, 73) == Piece::SelfKnight)
-			//	|| (x <= 5 && y <= 6 && get_piece(&board, x + 2, y + 1, 74) == Piece::SelfKnight)
-			//	|| (x <= 5 && y >= 1 && get_piece(&board, x + 2, y - 1, 75) == Piece::SelfKnight)
-			//	|| (x <= 6 && y >= 2 && get_piece(&board, x + 1, y - 2, 76) == Piece::SelfKnight)
-			//	|| (x >= 1 && y >= 2 && get_piece(&board, x - 1, y - 2, 77) == Piece::SelfKnight)
-			//	|| (x >= 2 && y >= 1 && get_piece(&board, x - 2, y - 1, 78) == Piece::SelfKnight)
-			//	|| (x >= 2 && y <= 6 && get_piece(&board, x - 2, y + 1, 79) == Piece::SelfKnight)
+			//	if (x >= 1 && y <= 5 && get_piece(&board, x - 1, y + 2, 72) == Piece::BlackKnight)
+			//	|| (x <= 6 && y <= 5 && get_piece(&board, x + 1, y + 2, 73) == Piece::BlackKnight)
+			//	|| (x <= 5 && y <= 6 && get_piece(&board, x + 2, y + 1, 74) == Piece::BlackKnight)
+			//	|| (x <= 5 && y >= 1 && get_piece(&board, x + 2, y - 1, 75) == Piece::BlackKnight)
+			//	|| (x <= 6 && y >= 2 && get_piece(&board, x + 1, y - 2, 76) == Piece::BlackKnight)
+			//	|| (x >= 1 && y >= 2 && get_piece(&board, x - 1, y - 2, 77) == Piece::BlackKnight)
+			//	|| (x >= 2 && y >= 1 && get_piece(&board, x - 2, y - 1, 78) == Piece::BlackKnight)
+			//	|| (x >= 2 && y <= 6 && get_piece(&board, x - 2, y + 1, 79) == Piece::BlackKnight)
 			//	{return true;}
 			//	// bishops (and queens)
 			//	let check_bishops_and_queens = |x_dir: u8, y_dir: u8| {
@@ -140,7 +338,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			//			curr_x = curr_x.wrapping_add(x_dir);
 			//			curr_y = curr_y.wrapping_add(y_dir);
 			//			let piece = get_piece(&board, curr_x, curr_y, 80);
-			//			if piece == Piece::SelfBishop || piece == Piece::SelfQueen {return true;}
+			//			if piece == Piece::BlackBishop || piece == Piece::BlackQueen {return true;}
 			//			if piece.is_other() {break;}
 			//		}
 			//		false
@@ -157,7 +355,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			//			curr_x = curr_x.wrapping_add(x_dir);
 			//			curr_y = curr_y.wrapping_add(y_dir);
 			//			let piece = get_piece(&board, curr_x, curr_y, 81);
-			//			if piece == Piece::SelfRook || piece == Piece::SelfQueen {return true;}
+			//			if piece == Piece::BlackRook || piece == Piece::BlackQueen {return true;}
 			//			if piece.is_other() {break;}
 			//		}
 			//		false
@@ -173,7 +371,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			//	let y_max = y.min(6) + 1;
 			//	for x in x_min..=x_max {
 			//		for y in y_min..=y_max {
-			//			if get_piece(&board, x, y, 82) == Piece::SelfKing {return true;}
+			//			if get_piece(&board, x, y, 82) == Piece::BlackKing {return true;}
 			//		}
 			//	}
 			//	false
@@ -181,19 +379,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			
 			// check if move is valid
 			let is_valid = 'is_valid: {match from_piece {
-				Piece::OtherPawn => {
+				Piece::WhitePawn => {
 					if to_file == from_file && to_rank == from_rank + 1 && to_piece == Piece::None {break 'is_valid true;}; // move forward
 					if to_file == from_file && from_rank == 1 && to_rank == 3 && get_piece(&board, from_file, 2, 83) == Piece::None && to_piece == Piece::None {break 'is_valid true;}; // starting move two forward
-					if to_file.abs_diff(from_file) == 1 && to_rank == from_rank + 1 && to_piece.is_self() {break 'is_valid true;}; // capture
-					if to_file.abs_diff(from_file) == 1 && to_rank == 6 && get_piece(&board, to_file, 5, 84) == Piece::SelfPawn && get_piece(&prev_board_state, to_file, 5, 85) == Piece::None {break 'is_valid true;}; // en passant
+					if to_file.abs_diff(from_file) == 1 && to_rank == from_rank + 1 && to_piece.is_black() {break 'is_valid true;}; // capture
+					if to_file.abs_diff(from_file) == 1 && to_rank == 6 && get_piece(&board, to_file, 5, 84) == Piece::BlackPawn && get_piece(&prev_board_state, to_file, 5, 85) == Piece::None {break 'is_valid true;}; // en passant
 					false
 				}
-				Piece::OtherKnight => {
+				Piece::WhiteKnight => {
 					let len1 = to_file.abs_diff(from_file);
 					let len2 = to_rank.abs_diff(from_rank);
 					(len1 == 1 && len2 == 2) || (len2 == 1 && len1 == 2)
 				}
-				Piece::OtherBishop => {
+				Piece::WhiteBishop => {
 					let x_len = to_file.abs_diff(from_file);
 					let y_len = to_rank.abs_diff(from_rank);
 					if x_len != y_len {break 'is_valid false;}
@@ -208,7 +406,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 					}
 					true
 				}
-				Piece::OtherRook => {
+				Piece::WhiteRook => {
 					let x_len = to_file.abs_diff(from_file);
 					let y_len = to_rank.abs_diff(from_rank);
 					let can_move = if x_len == 0 {
@@ -239,7 +437,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 					}
 					can_move
 				}
-				Piece::OtherQueen => {
+				Piece::WhiteQueen => {
 					let x_len = to_file.abs_diff(from_file);
 					let y_len = to_rank.abs_diff(from_rank);
 					if x_len == 0 {
@@ -273,15 +471,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 						false
 					}
 				}
-				Piece::OtherKing => {
+				Piece::WhiteKing => {
 					if from_file == 4 && from_rank == 0 && to_file == 2 && to_rank == 0 && (game_flags & 0b00000001) > 0 {
 						set_piece(&mut board, 0, 0, Piece::None);
-						set_piece(&mut board, 3, 0, Piece::OtherRook);
+						set_piece(&mut board, 3, 0, Piece::WhiteRook);
 						game_flags &= 0b11111100;
 						true
 					} else if from_file == 4 && from_rank == 0 && to_file == 6 && to_rank == 0 && (game_flags & 0b00000010) > 0 {
 						set_piece(&mut board, 7, 0, Piece::None);
-						set_piece(&mut board, 5, 0, Piece::OtherRook);
+						set_piece(&mut board, 5, 0, Piece::WhiteRook);
 						game_flags &= 0b11111100;
 						true
 					} else {
@@ -299,20 +497,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			set_piece(&mut board, to_file, to_rank, from_piece);
 			
 			// promotion
-			if from_piece == Piece::OtherPawn && to_rank == 7 && to_piece != Piece::SelfKing {
+			if from_piece == Piece::WhitePawn && to_rank == 7 && to_piece != Piece::BlackKing {
 				print_board(&board, &mut stdout)?;
-				'promote: {
-					output!(stdout, 21, "Your pawn has reached the end of the board! What you want to promote it to? ");
-					let new_piece = read!();
-					match &*new_piece.to_ascii_lowercase() {
-						"knight" => set_piece(&mut board, to_file, to_rank, Piece::OtherKnight),
-						"bishop" => set_piece(&mut board, to_file, to_rank, Piece::OtherBishop),
-						"rook" => set_piece(&mut board, to_file, to_rank, Piece::OtherRook),
-						"queen" => set_piece(&mut board, to_file, to_rank, Piece::OtherQueen),
-						_ => {output!(stdout, 22, "Invalid option, enter 'knight', 'bishop', 'rook' or 'queen'");}
-					}
-					execute!(stdout, cursor::MoveTo(0, 22), terminal::Clear(terminal::ClearType::CurrentLine))?;
+				output!(stdout, 21, "Your pawn has reached the end of the board! What you want to promote it to? ");
+				let new_piece = read!();
+				match &*new_piece.to_ascii_lowercase() {
+					"knight" => set_piece(&mut board, to_file, to_rank, Piece::WhiteKnight),
+					"bishop" => set_piece(&mut board, to_file, to_rank, Piece::WhiteBishop),
+					"rook" => set_piece(&mut board, to_file, to_rank, Piece::WhiteRook),
+					"queen" => set_piece(&mut board, to_file, to_rank, Piece::WhiteQueen),
+					_ => {output!(stdout, 22, "Invalid option, enter 'knight', 'bishop', 'rook' or 'queen'");}
 				}
+				execute!(stdout, cursor::MoveTo(0, 22), terminal::Clear(terminal::ClearType::CurrentLine))?;
 			}
 			
 			print_board(&board, &mut stdout)?;
@@ -320,7 +516,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			execute!(stdout, cursor::MoveTo(0, 21), terminal::Clear(terminal::ClearType::CurrentLine))?;
 			
 			// win condition
-			if to_piece == Piece::SelfKing {
+			if to_piece == Piece::BlackKing {
 				print_board(&board, &mut stdout)?;
 				output!(stdout, 21, "You have captured your opponent's king!");
 				player_won = true;
@@ -335,7 +531,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		let start = Instant::now();
 		engine::make_move(&mut board, &mut game_flags, time_data.map(|v| v.1), &thread_pool);
 		print_board(&board, &mut stdout)?;
-		if let Some((player_time, engine_time, bonus_time)) = &mut time_data {
+		if let Some((_player_time, engine_time, bonus_time)) = &mut time_data {
 			let time_taken = start.elapsed().as_millis() as usize;
 			if *engine_time < time_taken {
 				output!(stdout, 21, "Engine has lost on time");
