@@ -61,6 +61,7 @@ fn main_result() -> Result<()> {
 	let font_data = fs::read(resources_path.join(&settings.font_name))?;
 	let font = FontVec::try_from_vec(font_data)?;
 	let mut text_cache = sdl3_text::TextCache::new(font);
+	let textures = load_textures(&resources_path, &texture_creator)?;
 	
 	let mut data = AppData {
 		
@@ -76,7 +77,7 @@ fn main_result() -> Result<()> {
 		
 		for event in event_pump.poll_iter() { handle_event(&mut data, event)?; }
 		
-		draw(&mut data, &mut canvas, &texture_creator, &mut text_cache)?;
+		draw(&mut data, &mut canvas, &texture_creator, &mut text_cache, &textures)?;
 		
 		reload_settings_if_needed(&mut data, &mut text_cache)?;
 		

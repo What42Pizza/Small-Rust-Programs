@@ -14,6 +14,23 @@ pub struct AppData {
 
 
 
+pub struct Textures<'a> {
+	pub black_pawn: Texture<'a>,
+	pub black_knight: Texture<'a>,
+	pub black_bishop: Texture<'a>,
+	pub black_rook: Texture<'a>,
+	pub black_queen: Texture<'a>,
+	pub black_king: Texture<'a>,
+	pub white_pawn: Texture<'a>,
+	pub white_knight: Texture<'a>,
+	pub white_bishop: Texture<'a>,
+	pub white_rook: Texture<'a>,
+	pub white_queen: Texture<'a>,
+	pub white_king: Texture<'a>,
+}
+
+
+
 pub struct AppSettings {
 	
 	pub last_modified_time: SystemTime,
