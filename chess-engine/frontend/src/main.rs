@@ -12,6 +12,7 @@ pub use draw::*;
 pub mod data;
 pub use data::*;
 pub mod utils;
+use sdl3::EventPump;
 pub use utils::*;
 
 
@@ -19,7 +20,7 @@ pub use utils::*;
 pub use shared::*;
 use std::fs;
 pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, Duration, SystemTime}};
-pub use sdl3::{render::{Canvas, FRect}, video::Window, event::Event, keyboard::Mod, render::{Texture, TextureCreator}, video::WindowContext, pixels::{Color, PixelFormat}, sys::pixels::SDL_PixelFormat};
+pub use sdl3::{render::{Canvas, FRect}, video::Window, event::Event, keyboard::Mod, render::{Texture, TextureCreator}, video::WindowContext, pixels::{Color, PixelFormat}, sys::pixels::SDL_PixelFormat, mouse::MouseState};
 use image::{EncodableLayout, ImageReader};
 pub use anyhow::*;
 pub use easy_sdl3_text as sdl3_text;
@@ -68,15 +69,24 @@ fn main_result() -> Result<()> {
 	
 	let mut data = AppData {
 		
+		// basics
 		settings,
 		resources_path,
-		window_size: canvas.window().size(),
 		should_close: false,
 		
+		// window elements
+		window_size: (0.0, 0.0),
+		mouse_state: event_pump.mouse_state(),
+		prev_mouse_state: event_pump.mouse_state(),
+		new_game_button_rect: FRect::ZERO,
+		new_game_button_down: false,
+		
+		// game data
 		board: default_board(),
 		state: State::NotPlaying,
 		
 	};
+	update_window_elements(&mut data, &canvas, &event_pump)?;
 	
 	while !data.should_close {
 		
@@ -84,10 +94,33 @@ fn main_result() -> Result<()> {
 		
 		for event in event_pump.poll_iter() { handle_event(&mut data, event)?; }
 		
-		data.window_size = canvas.output_size()?;
+		update_window_elements(&mut data, &canvas, &event_pump)?;
 		draw(&mut data, &mut canvas, &texture_creator, &mut text_cache, &textures)?;
 		
 	}
+	
+	Ok(())
+}
+
+
+
+pub fn update_window_elements(data: &mut AppData, canvas: &Canvas<Window>, event_pump: &EventPump) -> Result<()> {
+	
+	data.prev_mouse_state = data.mouse_state;
+	data.mouse_state = event_pump.mouse_state();
+	let window_size = canvas.output_size()?;
+	let (width, height) = (window_size.0 as f32, window_size.1 as f32);
+	data.window_size = (width, height);
+	
+	let top_bar_rect = get_top_bar_rect(width, height);
+	
+	// new_game button
+	let x = top_bar_rect.x + top_bar_rect.w * 0.01;
+	let y = top_bar_rect.y + top_bar_rect.h * 0.15;
+	let w = top_bar_rect.w * 0.14;
+	let h = top_bar_rect.h * 0.7;
+	data.new_game_button_rect = FRect::new(x, y, w, h);
+	if !data.mouse_state.left() || !data.new_game_button_rect.contains(data.mouse_state.pos()) {data.new_game_button_down = false;}
 	
 	Ok(())
 }
@@ -108,6 +141,8 @@ fn load_settings(settings_path: &Path) -> Result<AppSettings> {
 	
 	let background_color = get_settings_color_rgb("background color", &settings)?;
 	let top_bar_color = get_settings_color_rgb("top bar color", &settings)?;
+	let top_bar_buttons_color = get_settings_color_rgb("top bar buttons color", &settings)?;
+	let top_bar_buttons_darkened_color = get_settings_color_rgb("top bar buttons darkened color", &settings)?;
 	let board_color_dark = get_settings_color_rgb("board color dark", &settings)?;
 	let board_color_light = get_settings_color_rgb("board color light", &settings)?;
 	let board_trim_color = get_settings_color_rgb("board trim color", &settings)?;
@@ -120,6 +155,8 @@ fn load_settings(settings_path: &Path) -> Result<AppSettings> {
 		
 		background_color,
 		top_bar_color,
+		top_bar_buttons_color,
+		top_bar_buttons_darkened_color,
 		board_color_dark,
 		board_color_light,
 		board_trim_color,

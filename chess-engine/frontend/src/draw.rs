@@ -2,18 +2,23 @@ use crate::*;
 
 
 
-pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &mut AppData, canvas: &mut Canvas<Window>, texture_creator: &'a TextureCreator<WindowContext>, text_cache: &mut sdl3_text::TextCache<'a, Font>, textures: &Textures<'a>) -> Result<()> {
+pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Canvas<Window>, texture_creator: &'a TextureCreator<WindowContext>, text_cache: &mut sdl3_text::TextCache<'a, Font>, textures: &Textures<'a>) -> Result<()> {
 	canvas.set_draw_color(data.settings.background_color);
 	canvas.clear();
-	let (width, height) = canvas.output_size()?;
-	let (width, height) = (width as f32, height as f32);
+	let (width, height) = (data.window_size.0, data.window_size.1);
 	let screen_mid = (width * 0.5, height * 0.5);
 	
 	//sdl3_text::render_text_subpixel("This is a lot of text! I have 1, 2, and 3? this... is (1 - 3) - thing[4]", 30, 50, 150, Color::RGB(30, 30, 30), Color::RGB(246, 223, 178), canvas, texture_creator, text_cache)?;
 	
 	// top bar
 	canvas.set_draw_color(data.settings.top_bar_color);
-	canvas.fill_rect(FRect::new(0.0, 0.0, width, height * 0.08))?;
+	canvas.fill_rect(get_top_bar_rect(width, height))?;
+	
+	let button_color = if data.new_game_button_down {data.settings.top_bar_buttons_darkened_color} else {data.settings.top_bar_buttons_color};
+	canvas.set_draw_color(button_color);
+	canvas.fill_rect(data.new_game_button_rect)?;
+	let new_game_pos = data.new_game_button_rect.center();
+	sdl3_text::render_text_subpixel("New Game", (data.new_game_button_rect.h * 0.7) as u32, new_game_pos.0 as i32, new_game_pos.1 as i32, sdl3_text::HAlign::Center, sdl3_text::VAlign::Center, Color::RGB(30, 30, 30), button_color, canvas, texture_creator, text_cache)?;
 	
 	// chess board
 	let mut board_rect = FRect::new(screen_mid.0 - height * 0.26, screen_mid.1 - height * 0.26, height * 0.52, height * 0.52);
@@ -33,6 +38,12 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &mut AppData, canvas: &mu
 	
 	canvas.present();
 	Ok(())
+}
+
+
+
+pub fn get_top_bar_rect(width: f32, height: f32) -> FRect {
+	FRect::new(0.0, 0.0, width, height * 0.08)
 }
 
 

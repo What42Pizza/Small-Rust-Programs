@@ -1,25 +1,34 @@
 format 1
 
 
+# name of the font file, which must also be placed in the 'resources' folder
 font: "Inter_24pt-Regular.ttf"
 
 
 background color red:   246
-background color green: 222
-background color blue:  178
+background color green: 221
+background color blue:  176
 
 top bar color red:   254
 top bar color green: 234
 top bar color blue:  193
 
-board color dark red:   219
-board color dark green: 185
-board color dark blue:  142
+top bar buttons color red:   241
+top bar buttons color green: 213
+top bar buttons color blue:  164
 
-board color light red:   254
-board color light green: 234
-board color light blue:  194
+top bar buttons darkened color red:   217
+top bar buttons darkened color green: 191
+top bar buttons darkened color blue:  148
+
+board color dark red:   216
+board color dark green: 181
+board color dark blue:  135
+
+board color light red:   255
+board color light green: 237
+board color light blue:  198
 
 board trim color red:   233
 board trim color green: 204
-board trim color blue:  157
+board trim color blue:  150

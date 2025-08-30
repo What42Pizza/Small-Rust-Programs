@@ -16,10 +16,25 @@ pub fn handle_event(data: &mut AppData, event: Event) -> Result<()> {
 		}
 		
 		Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn, clicks: _, x, y } => {
+			if data.new_game_button_rect.contains((x, y)) {
+				data.new_game_button_down = true;
+				new_game_button_pressed(data);
+				return Ok(());
+			}
 			println!("{:?}", get_slot_from_screen_pos(x, y, data.window_size));
 		}
 		
 		_ => {}
 	}
 	Ok(())
+}
+
+
+
+pub fn new_game_button_pressed(data: &mut AppData) {
+	data.state = State::Playing {
+		time_data: todo!(),
+		turn: TurnData::PlayersTurn (PlayersTurnState::NotHoldingPiece),
+	};
+	data.board = default_board();
 }

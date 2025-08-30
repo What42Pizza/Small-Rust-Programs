@@ -4,13 +4,19 @@ use crate::*;
 
 pub struct AppData {
 	
+	// basics
 	pub settings: AppSettings,
 	pub resources_path: PathBuf,
-	pub window_size: (u32, u32),
 	pub should_close: bool,
 	
+	// window elements
+	pub window_size: (f32, f32),
+	pub mouse_state: MouseState,
+	pub prev_mouse_state: MouseState,
+	pub new_game_button_rect: FRect,
+	pub new_game_button_down: bool,
 	
-	
+	// game data
 	pub board: Board,
 	pub state: State,
 	
@@ -68,6 +74,8 @@ pub struct AppSettings {
 	
 	pub background_color: Color,
 	pub top_bar_color: Color,
+	pub top_bar_buttons_color: Color,
+	pub top_bar_buttons_darkened_color: Color,
 	pub board_color_dark: Color,
 	pub board_color_light: Color,
 	pub board_trim_color: Color,
