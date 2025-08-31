@@ -26,7 +26,11 @@ pub struct AppData {
 
 pub enum State {
 	NotPlaying,
-	Playing {time_data: TimeData, turn: TurnData},
+	Playing {
+		time_remainings: Option<(Duration, Duration)>,
+		time_per_move: Option<Duration>,
+		turn: TurnData,
+	},
 }
 
 pub enum TurnData {
@@ -37,14 +41,6 @@ pub enum TurnData {
 pub enum PlayersTurnState {
 	NotHoldingPiece,
 	HoldingPiece {x: u8, y: u8, piece: Piece},
-}
-
-
-
-pub struct TimeData {
-	pub player_time_remaining: Duration,
-	pub engine_time_remaining: Duration,
-	pub time_per_move: Duration
 }
 
 
@@ -69,6 +65,9 @@ pub struct Textures<'a> {
 pub struct AppSettings {
 	
 	pub last_modified_time: SystemTime,
+	
+	pub total_time: u64,
+	pub time_per_move: u64,
 	
 	pub font_name: String,
 	

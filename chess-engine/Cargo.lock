@@ -349,7 +349,7 @@ checksum = "0f6f2a77eee90d1d7591b3b7671a744710c593dae97cb97ab2489e550d1b0113"
 [[package]]
 name = "easy-sdl3-text"
 version = "0.2.1"
-source = "git+https://github.com/What42Pizza/easy-sdl3-text.git#80c2c62166c78b43335e4dd2f23d62d981236fed"
+source = "git+https://github.com/What42Pizza/easy-sdl3-text.git#db0ae3c7664908e047b63c07662da3d3ae08c91c"
 dependencies = [
  "ab_glyph",
  "rayon",

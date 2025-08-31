@@ -32,9 +32,6 @@ pub fn handle_event(data: &mut AppData, event: Event) -> Result<()> {
 
 
 pub fn new_game_button_pressed(data: &mut AppData) {
-	data.state = State::Playing {
-		time_data: todo!(),
-		turn: TurnData::PlayersTurn (PlayersTurnState::NotHoldingPiece),
-	};
+	data.state = State::new_playing(&data.settings);
 	data.board = default_board();
 }

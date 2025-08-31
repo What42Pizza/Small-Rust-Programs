@@ -36,6 +36,21 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 		}
 	}
 	
+	// game data text
+	let size = (height * 0.05) as u32;
+	let x = screen_mid.0 + height * 0.25 + width * 0.025;
+	let mut y = height * 0.25;
+	if let State::Playing { time_remainings: Some((player_time, engine_time)), time_per_move: _, turn: _ } = &data.state {
+		sdl3_text::render_text_subpixel(format!("Your time left: {}", format_min_sec(*player_time)), size, x as i32, y as i32, sdl3_text::HAlign::Left, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache)?;
+		y += size as f32 * 1.1;
+		sdl3_text::render_text_subpixel(format!("Engine's time left: {}", format_min_sec(*engine_time)), size, x as i32, y as i32, sdl3_text::HAlign::Left, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache)?;
+		y += size as f32 * 1.1;
+	}
+	if let State::Playing { time_remainings: _, time_per_move: Some(time_per_move), turn: _ } = &data.state {
+		let size = size * 7 / 10;
+		sdl3_text::render_text_subpixel(format!("Time per move: {}", format_min_sec(*time_per_move)), size, x as i32, y as i32, sdl3_text::HAlign::Left, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache)?;
+	}
+	
 	canvas.present();
 	Ok(())
 }

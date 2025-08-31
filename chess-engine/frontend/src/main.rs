@@ -137,6 +137,9 @@ fn load_settings(settings_path: &Path) -> Result<AppSettings> {
 		println!("Error while loading settings: {error}");
 	}
 	
+	let total_time = settings.get_int("total time")? as u64;
+	let time_per_move = settings.get_int("time per move")? as u64;
+	
 	let font_name = settings.get_str("font")?.to_string();
 	
 	let background_color = get_settings_color_rgb("background color", &settings)?;
@@ -150,6 +153,9 @@ fn load_settings(settings_path: &Path) -> Result<AppSettings> {
 	Ok(AppSettings {
 		
 		last_modified_time,
+		
+		total_time,
+		time_per_move,
 		
 		font_name,
 		

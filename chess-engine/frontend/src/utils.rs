@@ -2,6 +2,20 @@ use crate::*;
 
 
 
+impl State {
+	pub fn new_playing(settings: &AppSettings) -> Self {
+		let total_time = Duration::from_secs(settings.total_time);
+		let time_per_move = Duration::from_secs(settings.time_per_move);
+		Self::Playing {
+			time_remainings: if total_time.is_zero() {None} else {Some((total_time, total_time))},
+			time_per_move: if time_per_move.is_zero() {None} else {Some(time_per_move)},
+			turn: TurnData::PlayersTurn (PlayersTurnState::NotHoldingPiece),
+		}
+	}
+}
+
+
+
 pub fn show_fatal_error(message: impl AsRef<str>) -> ! {
 	let message = message.as_ref();
 	rfd::MessageDialog::new()
@@ -30,6 +44,13 @@ pub fn get_slot_from_screen_pos(x: f32, y: f32, window_size: (f32, f32)) -> Opti
 	let slot_y = (y - start_y) / slot_width;
 	if slot_y >= 8.0 {return None;}
 	Some((slot_x as u8, slot_y as u8))
+}
+
+
+
+pub fn format_min_sec(dur: Duration) -> String {
+	let secs = dur.as_secs();
+	format!("{}:{:02}", secs / 60, secs % 60)
 }
 
 
