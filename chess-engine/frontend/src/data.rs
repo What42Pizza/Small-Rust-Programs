@@ -8,6 +8,7 @@ pub struct AppData {
 	pub settings: AppSettings,
 	pub resources_path: PathBuf,
 	pub should_close: bool,
+	pub last_update_time: Instant,
 	
 	// window elements
 	pub window_size: (f32, f32),
@@ -24,6 +25,7 @@ pub struct AppData {
 
 
 
+#[derive(Debug)]
 pub enum State {
 	NotPlaying,
 	Playing {
@@ -31,16 +33,26 @@ pub enum State {
 		time_per_move: Option<Duration>,
 		turn: TurnData,
 	},
+	GameEnded (GameEndedState),
 }
 
+#[derive(Debug)]
 pub enum TurnData {
 	PlayersTurn (PlayersTurnState),
 	EnginesTurn,
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum PlayersTurnState {
 	NotHoldingPiece,
 	HoldingPiece {x: u8, y: u8, piece: Piece},
+}
+
+#[derive(Debug)]
+pub enum GameEndedState {
+	PlayerWon,
+	EngineWon,
+	NeitherWon,
 }
 
 

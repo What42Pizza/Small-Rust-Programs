@@ -29,7 +29,7 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 			let pos = get_slot_screen_rect(x, y, data.window_size);
 			canvas.set_draw_color(if (x + y) % 2 == 1 {data.settings.board_color_dark} else {data.settings.board_color_light});
 			canvas.fill_rect(pos)?;
-			let piece = get_piece(&data.board, x, y, 123);
+			let piece = get_piece(&data.board, x, y);
 			if let Some(piece_texture) = get_texture_for_piece(piece, textures) {
 				canvas.copy(piece_texture, None, pos)?;
 			}
@@ -49,6 +49,14 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 	if let State::Playing { time_remainings: _, time_per_move: Some(time_per_move), turn: _ } = &data.state {
 		let size = size * 7 / 10;
 		sdl3_text::render_text_subpixel(format!("Time per move: {}", format_min_sec(*time_per_move)), size, x as i32, y as i32, sdl3_text::HAlign::Left, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache)?;
+	}
+	
+	// held piece
+	if let State::Playing { turn: TurnData::PlayersTurn (PlayersTurnState::HoldingPiece { x, y, piece }), .. } = &data.state {
+		let slot_width = height / 16.0;
+		let texture = get_texture_for_piece(*piece, textures).expect("Cannot hold no Piece::None");
+		let dst = FRect::new(data.mouse_state.x() - slot_width * 0.5, data.mouse_state.y() - slot_width * 0.5, slot_width, slot_width);
+		canvas.copy(texture, None, dst)?;
 	}
 	
 	canvas.present();

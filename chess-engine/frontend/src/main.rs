@@ -73,6 +73,7 @@ fn main_result() -> Result<()> {
 		settings,
 		resources_path,
 		should_close: false,
+		last_update_time: Instant::now(),
 		
 		// window elements
 		window_size: (0.0, 0.0),
@@ -93,6 +94,7 @@ fn main_result() -> Result<()> {
 		reload_settings_if_needed(&mut data, &mut text_cache)?;
 		
 		for event in event_pump.poll_iter() { handle_event(&mut data, event)?; }
+		update(&mut data, &event_pump);
 		
 		update_window_elements(&mut data, &canvas, &event_pump)?;
 		draw(&mut data, &mut canvas, &texture_creator, &mut text_cache, &textures)?;
@@ -104,10 +106,41 @@ fn main_result() -> Result<()> {
 
 
 
+pub fn update(data: &mut AppData, event_pump: &EventPump) {
+	
+	data.mouse_state = event_pump.mouse_state();
+	
+	let new_update_time = Instant::now();
+	let dt = new_update_time.duration_since(data.last_update_time);
+	data.last_update_time = new_update_time;
+	
+	// tick time remainings
+	if let State::Playing { time_remainings, time_per_move, turn } = &mut data.state {
+		if let Some((player_time, engine_time)) = time_remainings {
+			match turn {
+				TurnData::PlayersTurn (_) => *player_time = player_time.saturating_sub(dt),
+				TurnData::EnginesTurn => *engine_time = engine_time.saturating_sub(dt)
+			}
+			if player_time.is_zero() { data.state = State::GameEnded (GameEndedState::EngineWon); }
+			else if engine_time.is_zero() { data.state = State::GameEnded (GameEndedState::PlayerWon); }
+		}
+	}
+	
+	// let go of pieces
+	if !data.mouse_state.left() && let State::Playing { turn: TurnData::PlayersTurn (players_turn_state), .. } = &mut data.state {
+		if let PlayersTurnState::HoldingPiece { x, y, piece } = *players_turn_state {
+			set_piece(&mut data.board, x, y, piece);
+			*players_turn_state = PlayersTurnState::NotHoldingPiece;
+		}
+	}
+	
+}
+
+
+
 pub fn update_window_elements(data: &mut AppData, canvas: &Canvas<Window>, event_pump: &EventPump) -> Result<()> {
 	
 	data.prev_mouse_state = data.mouse_state;
-	data.mouse_state = event_pump.mouse_state();
 	let window_size = canvas.output_size()?;
 	let (width, height) = (window_size.0 as f32, window_size.1 as f32);
 	data.window_size = (width, height);

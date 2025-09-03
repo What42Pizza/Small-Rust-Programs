@@ -23,7 +23,7 @@ pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<
 			let board = *board;
 			let game_flags = *game_flags;
 			s.spawn(move |_s| {
-				*output = try_black_move(board, time_remaining, i as u8, game_flags, 7);
+				*output = try_black_move(board, time_remaining, i as u8, game_flags, 6);
 			});
 		}
 	});
@@ -74,7 +74,7 @@ fn try_black_move(board: Board, ending_millis: usize, index: u8, game_flags: u8,
 
 fn try_black_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha: f32, beta: f32, depth: u8) -> f32 {
 	let depth = depth - 1;
-	let mut score: f32 = -100000000.0; // searching for the best move for the engine
+	let mut score: f32 = -100000000.0; // searching for the best move for black
 	//let mut move_count = 0;
 	for x in 0..4 {
 		for y in 0..8 {
@@ -117,7 +117,7 @@ fn try_black_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha
 
 fn try_white_moves(board: Board, ending_millis: usize, game_flags: u8, alpha: f32, mut beta: f32, depth: u8) -> f32 {
 	let depth = depth - 1;
-	let mut score: f32 = 100000000.0; // searching for the best move for the player
+	let mut score: f32 = 100000000.0; // searching for the best move for white
 	//let mut move_count = 0;
 	for x in 0..4 {
 		for y in 0..8 {
@@ -356,15 +356,18 @@ static WHITE_KING_SCORES: [f32; 64] = [
 	1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6, 1000000.0 - 0.6,
 ];
 
-pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
+pub fn get_board_score(board: &Board, black_moves_next: bool) -> f32 {
+	
+	// get filled squares
 	let mut filled_squares: u64 = 0;
 	for (i, byte) in board.iter().copied().enumerate() {
 		if byte & 0b00001111 > 0 {filled_squares |= 1 << (i * 2);}
 		if byte & 0b11110000 > 0 {filled_squares |= 1 << (i * 2 + 1);}
 	}
-	let mut attacked_squares: u64 = 0;
 	
-	if engine_moves_next {
+	// get attacked squares
+	let mut attacked_squares: u64 = 0;
+	if black_moves_next {
 		for x in 0..4 {
 			for y in 0..8 {
 				let (piece1, piece2) = get_doubled_pieces(board, x * 2, y);
@@ -465,6 +468,8 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 			}
 		}
 	}
+	//static LOCK: Mutex<()> = Mutex::new(());
+	//let lock = LOCK.lock();
 	//for y in (0..8).rev() {
 	//	for x in 0..8 {
 	//		let i = x + y * 8;
@@ -473,44 +478,46 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 	//	}
 	//	println!();
 	//}
+	//drop(lock);
+	//panic!();
 	
-	let mut engine_score = 0.001;
-	let mut player_score = 0.001;
-	let mut engine_has_king = false;
-	let mut player_has_king = false;
+	let mut black_score = 0.001;
+	let mut white_score = 0.001;
+	let mut black_has_king = false;
+	let mut white_has_king = false;
 	for x in 0..4 {
 		for y in 0..8 {
 			let (piece1, piece2) = get_doubled_pieces(board, x * 2, y);
 			let i = (x * 2 + y * 8) as usize;
 			let is_under_attack = attacked_squares & (1 << (x * 2 + y * 8)) > 0;
 			match piece1 {
-				Piece::BlackPawn   if !is_under_attack => engine_score += BLACK_PAWN_SCORES[i],
-				Piece::BlackKnight if !is_under_attack => engine_score += BLACK_KNIGHT_SCORES[i],
-				Piece::BlackBishop if !is_under_attack => engine_score += 3.3,
-				Piece::BlackRook   if !is_under_attack => engine_score += 5.5,
-				Piece::BlackQueen  if !is_under_attack => engine_score += 9.9,
-				Piece::BlackKing   if !is_under_attack => {engine_score += BLACK_KING_SCORES[i]; engine_has_king = true;}
-				Piece::WhitePawn   => player_score += WHITE_PAWN_SCORES[i],
-				Piece::WhiteKnight => player_score += WHITE_KNIGHT_SCORES[i],
-				Piece::WhiteBishop => player_score += 3.3,
-				Piece::WhiteRook   => player_score += 5.5,
-				Piece::WhiteQueen  => player_score += 9.9,
-				Piece::WhiteKing   => {player_score += WHITE_KING_SCORES[i]; player_has_king = true;}
+				Piece::BlackPawn   if !(is_under_attack && !black_moves_next) => black_score += BLACK_PAWN_SCORES[i + 1],
+				Piece::BlackKnight if !(is_under_attack && !black_moves_next) => black_score += BLACK_KNIGHT_SCORES[i + 1],
+				Piece::BlackBishop if !(is_under_attack && !black_moves_next) => black_score += 3.3,
+				Piece::BlackRook   if !(is_under_attack && !black_moves_next) => black_score += 5.5,
+				Piece::BlackQueen  if !(is_under_attack && !black_moves_next) => black_score += 9.9,
+				Piece::BlackKing   if !(is_under_attack && !black_moves_next) => {black_score += BLACK_KING_SCORES[i + 1]; black_has_king = true;}
+				Piece::WhitePawn   if !(is_under_attack &&  black_moves_next)=> white_score += WHITE_PAWN_SCORES[i + 1],
+				Piece::WhiteKnight if !(is_under_attack &&  black_moves_next)=> white_score += WHITE_KNIGHT_SCORES[i + 1],
+				Piece::WhiteBishop if !(is_under_attack &&  black_moves_next)=> white_score += 3.3,
+				Piece::WhiteRook   if !(is_under_attack &&  black_moves_next)=> white_score += 5.5,
+				Piece::WhiteQueen  if !(is_under_attack &&  black_moves_next)=> white_score += 9.9,
+				Piece::WhiteKing   if !(is_under_attack &&  black_moves_next)=> {white_score += WHITE_KING_SCORES[i]; white_has_king = true;}
 				_ => {}
 			}
 			match piece2 {
-				Piece::BlackPawn   if !is_under_attack => engine_score += BLACK_PAWN_SCORES[i + 1],
-				Piece::BlackKnight if !is_under_attack => engine_score += BLACK_KNIGHT_SCORES[i + 1],
-				Piece::BlackBishop if !is_under_attack => engine_score += 3.3,
-				Piece::BlackRook   if !is_under_attack => engine_score += 5.5,
-				Piece::BlackQueen  if !is_under_attack => engine_score += 9.9,
-				Piece::BlackKing   if !is_under_attack => {engine_score += BLACK_KING_SCORES[i + 1]; engine_has_king = true;}
-				Piece::WhitePawn   => player_score += WHITE_PAWN_SCORES[i + 1],
-				Piece::WhiteKnight => player_score += WHITE_KNIGHT_SCORES[i + 1],
-				Piece::WhiteBishop => player_score += 3.3,
-				Piece::WhiteRook   => player_score += 5.5,
-				Piece::WhiteQueen  => player_score += 9.9,
-				Piece::WhiteKing   => {player_score += WHITE_KING_SCORES[i]; player_has_king = true;}
+				Piece::BlackPawn   if !(is_under_attack && !black_moves_next) => black_score += BLACK_PAWN_SCORES[i + 1],
+				Piece::BlackKnight if !(is_under_attack && !black_moves_next) => black_score += BLACK_KNIGHT_SCORES[i + 1],
+				Piece::BlackBishop if !(is_under_attack && !black_moves_next) => black_score += 3.3,
+				Piece::BlackRook   if !(is_under_attack && !black_moves_next) => black_score += 5.5,
+				Piece::BlackQueen  if !(is_under_attack && !black_moves_next) => black_score += 9.9,
+				Piece::BlackKing   if !(is_under_attack && !black_moves_next) => {black_score += BLACK_KING_SCORES[i + 1]; black_has_king = true;}
+				Piece::WhitePawn   if !(is_under_attack &&  black_moves_next)=> white_score += WHITE_PAWN_SCORES[i + 1],
+				Piece::WhiteKnight if !(is_under_attack &&  black_moves_next)=> white_score += WHITE_KNIGHT_SCORES[i + 1],
+				Piece::WhiteBishop if !(is_under_attack &&  black_moves_next)=> white_score += 3.3,
+				Piece::WhiteRook   if !(is_under_attack &&  black_moves_next)=> white_score += 5.5,
+				Piece::WhiteQueen  if !(is_under_attack &&  black_moves_next)=> white_score += 9.9,
+				Piece::WhiteKing   if !(is_under_attack &&  black_moves_next)=> {white_score += WHITE_KING_SCORES[i]; white_has_king = true;}
 				_ => {}
 			}
 		}
@@ -521,12 +528,12 @@ pub fn get_board_score(board: &Board, engine_moves_next: bool) -> f32 {
 	//	COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 	//}
 	
-	if !engine_has_king {
+	if !black_has_king {
 		-1000000.0
-	} else if !player_has_king {
+	} else if !white_has_king {
 		1000000.0
 	} else {
-		engine_score / player_score
+		black_score / white_score
 	}
 }
 

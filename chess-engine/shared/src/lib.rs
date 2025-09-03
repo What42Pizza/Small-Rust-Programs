@@ -64,7 +64,7 @@ pub fn set_piece(board: &mut Board, x: u8, y: u8, piece: Piece) {
 	board[(index / 2) as usize] = byte;
 }
 
-pub fn get_piece(board: &Board, x: u8, y: u8, _id: u8) -> Piece {
+pub fn get_piece(board: &Board, x: u8, y: u8) -> Piece {
 	let index = x + y * 8;
 	let mut byte = board[(index / 2) as usize];
 	byte &= if index % 2 == 0 {0b00001111} else {0b11110000};

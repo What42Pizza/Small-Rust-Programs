@@ -21,8 +21,8 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 		match piece {
 			
 			Piece::BlackPawn => {
-				if get_piece(board, x, y - 1, 8) == Piece::None {
-					if y == 6 && get_piece(board, x, 4, 9) == Piece::None {
+				if get_piece(board, x, y - 1) == Piece::None {
+					if y == 6 && get_piece(board, x, 4) == Piece::None {
 						yield (x, y - 1, SpecialMove::None);
 						yield (x, y - 2, SpecialMove::None);
 					} else if y == 1 {
@@ -34,7 +34,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 						yield (x, y - 1, SpecialMove::None);
 					}
 				}
-				if x >= 1 && get_piece(board, x - 1, y - 1, 10).is_white() {
+				if x >= 1 && get_piece(board, x - 1, y - 1).is_white() {
 					if y == 1 {
 						yield (x - 1, y - 1, SpecialMove::PromoteKnight);
 						yield (x - 1, y - 1, SpecialMove::PromoteBishop);
@@ -44,7 +44,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 						yield (x - 1, y - 1, SpecialMove::None);
 					}
 				}
-				if x <= 6 && get_piece(board, x + 1, y - 1, 11).is_white() {
+				if x <= 6 && get_piece(board, x + 1, y - 1).is_white() {
 					if y == 1 {
 						yield (x + 1, y - 1, SpecialMove::PromoteKnight);
 						yield (x + 1, y - 1, SpecialMove::PromoteBishop);
@@ -65,14 +65,14 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 			}
 			
 			Piece::BlackKnight => {
-				if x >= 1 && y <= 5 && !get_piece(board, x - 1, y + 2, 12).is_black() {yield (x - 1, y + 2, SpecialMove::None);}
-				if x <= 6 && y <= 5 && !get_piece(board, x + 1, y + 2, 13).is_black() {yield (x + 1, y + 2, SpecialMove::None);}
-				if x <= 5 && y <= 6 && !get_piece(board, x + 2, y + 1, 14).is_black() {yield (x + 2, y + 1, SpecialMove::None);}
-				if x <= 5 && y >= 1 && !get_piece(board, x + 2, y - 1, 15).is_black() {yield (x + 2, y - 1, SpecialMove::None);}
-				if x <= 6 && y >= 2 && !get_piece(board, x + 1, y - 2, 16).is_black() {yield (x + 1, y - 2, SpecialMove::None);}
-				if x >= 1 && y >= 2 && !get_piece(board, x - 1, y - 2, 17).is_black() {yield (x - 1, y - 2, SpecialMove::None);}
-				if x >= 2 && y >= 1 && !get_piece(board, x - 2, y - 1, 18).is_black() {yield (x - 2, y - 1, SpecialMove::None);}
-				if x >= 2 && y <= 6 && !get_piece(board, x - 2, y + 1, 19).is_black() {yield (x - 2, y + 1, SpecialMove::None);}
+				if x >= 1 && y <= 5 && !get_piece(board, x - 1, y + 2).is_black() {yield (x - 1, y + 2, SpecialMove::None);}
+				if x <= 6 && y <= 5 && !get_piece(board, x + 1, y + 2).is_black() {yield (x + 1, y + 2, SpecialMove::None);}
+				if x <= 5 && y <= 6 && !get_piece(board, x + 2, y + 1).is_black() {yield (x + 2, y + 1, SpecialMove::None);}
+				if x <= 5 && y >= 1 && !get_piece(board, x + 2, y - 1).is_black() {yield (x + 2, y - 1, SpecialMove::None);}
+				if x <= 6 && y >= 2 && !get_piece(board, x + 1, y - 2).is_black() {yield (x + 1, y - 2, SpecialMove::None);}
+				if x >= 1 && y >= 2 && !get_piece(board, x - 1, y - 2).is_black() {yield (x - 1, y - 2, SpecialMove::None);}
+				if x >= 2 && y >= 1 && !get_piece(board, x - 2, y - 1).is_black() {yield (x - 2, y - 1, SpecialMove::None);}
+				if x >= 2 && y <= 6 && !get_piece(board, x - 2, y + 1).is_black() {yield (x - 2, y + 1, SpecialMove::None);}
 			}
 			
 			Piece::BlackBishop => {
@@ -81,7 +81,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x <= 6 && curr_y <= 6 {
 					curr_x += 1;
 					curr_y += 1;
-					let piece = get_piece(board, curr_x, curr_y, 20);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -97,7 +97,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x <= 6 && curr_y >= 1 {
 					curr_x += 1;
 					curr_y -= 1;
-					let piece = get_piece(board, curr_x, curr_y, 21);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -113,7 +113,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x >= 1 && curr_y >= 1 {
 					curr_x -= 1;
 					curr_y -= 1;
-					let piece = get_piece(board, curr_x, curr_y, 22);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -129,7 +129,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x >= 1 && curr_y <= 6 {
 					curr_x -= 1;
 					curr_y += 1;
-					let piece = get_piece(board, curr_x, curr_y, 23);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -146,7 +146,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_x = x;
 				while curr_x <= 6 {
 					curr_x += 1;
-					let piece = get_piece(board, curr_x, y, 24);
+					let piece = get_piece(board, curr_x, y);
 					if piece.is_white() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
@@ -160,7 +160,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_x = x;
 				while curr_x >= 1 {
 					curr_x -= 1;
-					let piece = get_piece(board, curr_x, y, 25);
+					let piece = get_piece(board, curr_x, y);
 					if piece.is_white() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
@@ -174,7 +174,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_y = y;
 				while curr_y <= 6 {
 					curr_y += 1;
-					let piece = get_piece(board, x, curr_y, 26);
+					let piece = get_piece(board, x, curr_y);
 					if piece.is_white() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
@@ -188,7 +188,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_y = y;
 				while curr_y >= 1 {
 					curr_y -= 1;
-					let piece = get_piece(board, x, curr_y, 27);
+					let piece = get_piece(board, x, curr_y);
 					if piece.is_white() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
@@ -207,7 +207,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x <= 6 && curr_y <= 6 {
 					curr_x += 1;
 					curr_y += 1;
-					let piece = get_piece(board, curr_x, curr_y, 28);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -223,7 +223,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x <= 6 && curr_y >= 1 {
 					curr_x += 1;
 					curr_y -= 1;
-					let piece = get_piece(board, curr_x, curr_y, 29);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -239,7 +239,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x >= 1 && curr_y >= 1 {
 					curr_x -= 1;
 					curr_y -= 1;
-					let piece = get_piece(board, curr_x, curr_y, 30);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -255,7 +255,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x >= 1 && curr_y <= 6 {
 					curr_x -= 1;
 					curr_y += 1;
-					let piece = get_piece(board, curr_x, curr_y, 31);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_white() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -269,7 +269,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_x = x;
 				while curr_x <= 6 {
 					curr_x += 1;
-					let piece = get_piece(board, curr_x, y, 32);
+					let piece = get_piece(board, curr_x, y);
 					if piece.is_white() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
@@ -283,7 +283,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_x = x;
 				while curr_x >= 1 {
 					curr_x -= 1;
-					let piece = get_piece(board, curr_x, y, 33);
+					let piece = get_piece(board, curr_x, y);
 					if piece.is_white() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
@@ -297,7 +297,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_y = y;
 				while curr_y <= 6 {
 					curr_y += 1;
-					let piece = get_piece(board, x, curr_y, 34);
+					let piece = get_piece(board, x, curr_y);
 					if piece.is_white() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
@@ -311,7 +311,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_y = y;
 				while curr_y >= 1 {
 					curr_y -= 1;
-					let piece = get_piece(board, x, curr_y, 35);
+					let piece = get_piece(board, x, curr_y);
 					if piece.is_white() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
@@ -331,7 +331,7 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let y_max = y.min(6) + 1;
 				for x in x_min..=x_max {
 					for y in y_min..=y_max {
-						if !get_piece(board, x, y, 36).is_black() {
+						if !get_piece(board, x, y).is_black() {
 							yield (x, y, SpecialMove::None);
 						}
 					}
@@ -357,8 +357,8 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 		match piece {
 			
 			Piece::WhitePawn => {
-				if get_piece(board, x, y + 1, 37) == Piece::None {
-					if y == 1 && get_piece(board, x, 3, 38) == Piece::None {
+				if get_piece(board, x, y + 1) == Piece::None {
+					if y == 1 && get_piece(board, x, 3) == Piece::None {
 						yield (x, y + 1, SpecialMove::None);
 						yield (x, y + 2, SpecialMove::None);
 					} else if y == 6 {
@@ -370,7 +370,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 						yield (x, y + 1, SpecialMove::None);
 					}
 				}
-				if x >= 1 && get_piece(board, x - 1, y + 1, 39).is_black() {
+				if x >= 1 && get_piece(board, x - 1, y + 1).is_black() {
 					if y == 6 {
 						yield (x - 1, y + 1, SpecialMove::PromoteKnight);
 						yield (x - 1, y + 1, SpecialMove::PromoteBishop);
@@ -380,7 +380,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 						yield (x - 1, y + 1, SpecialMove::None);
 					}
 				}
-				if x <= 6 && get_piece(board, x + 1, y + 1, 40).is_black() {
+				if x <= 6 && get_piece(board, x + 1, y + 1).is_black() {
 					if y == 6 {
 						yield (x + 1, y + 1, SpecialMove::PromoteKnight);
 						yield (x + 1, y + 1, SpecialMove::PromoteBishop);
@@ -401,14 +401,14 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 			}
 			
 			Piece::WhiteKnight => {
-				if x >= 1 && y <= 5 && !get_piece(board, x - 1, y + 2, 41).is_white() {yield (x - 1, y + 2, SpecialMove::None);}
-				if x <= 6 && y <= 5 && !get_piece(board, x + 1, y + 2, 42).is_white() {yield (x + 1, y + 2, SpecialMove::None);}
-				if x <= 5 && y <= 6 && !get_piece(board, x + 2, y + 1, 43).is_white() {yield (x + 2, y + 1, SpecialMove::None);}
-				if x <= 5 && y >= 1 && !get_piece(board, x + 2, y - 1, 44).is_white() {yield (x + 2, y - 1, SpecialMove::None);}
-				if x <= 6 && y >= 2 && !get_piece(board, x + 1, y - 2, 45).is_white() {yield (x + 1, y - 2, SpecialMove::None);}
-				if x >= 1 && y >= 2 && !get_piece(board, x - 1, y - 2, 46).is_white() {yield (x - 1, y - 2, SpecialMove::None);}
-				if x >= 2 && y >= 1 && !get_piece(board, x - 2, y - 1, 47).is_white() {yield (x - 2, y - 1, SpecialMove::None);}
-				if x >= 2 && y <= 6 && !get_piece(board, x - 2, y + 1, 48).is_white() {yield (x - 2, y + 1, SpecialMove::None);}
+				if x >= 1 && y <= 5 && !get_piece(board, x - 1, y + 2).is_white() {yield (x - 1, y + 2, SpecialMove::None);}
+				if x <= 6 && y <= 5 && !get_piece(board, x + 1, y + 2).is_white() {yield (x + 1, y + 2, SpecialMove::None);}
+				if x <= 5 && y <= 6 && !get_piece(board, x + 2, y + 1).is_white() {yield (x + 2, y + 1, SpecialMove::None);}
+				if x <= 5 && y >= 1 && !get_piece(board, x + 2, y - 1).is_white() {yield (x + 2, y - 1, SpecialMove::None);}
+				if x <= 6 && y >= 2 && !get_piece(board, x + 1, y - 2).is_white() {yield (x + 1, y - 2, SpecialMove::None);}
+				if x >= 1 && y >= 2 && !get_piece(board, x - 1, y - 2).is_white() {yield (x - 1, y - 2, SpecialMove::None);}
+				if x >= 2 && y >= 1 && !get_piece(board, x - 2, y - 1).is_white() {yield (x - 2, y - 1, SpecialMove::None);}
+				if x >= 2 && y <= 6 && !get_piece(board, x - 2, y + 1).is_white() {yield (x - 2, y + 1, SpecialMove::None);}
 			}
 			
 			Piece::WhiteBishop => {
@@ -417,7 +417,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x <= 6 && curr_y <= 6 {
 					curr_x += 1;
 					curr_y += 1;
-					let piece = get_piece(board, curr_x, curr_y, 49);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -433,7 +433,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x <= 6 && curr_y >= 1 {
 					curr_x += 1;
 					curr_y -= 1;
-					let piece = get_piece(board, curr_x, curr_y, 50);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -449,7 +449,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x >= 1 && curr_y >= 1 {
 					curr_x -= 1;
 					curr_y -= 1;
-					let piece = get_piece(board, curr_x, curr_y, 51);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -465,7 +465,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x >= 1 && curr_y <= 6 {
 					curr_x -= 1;
 					curr_y += 1;
-					let piece = get_piece(board, curr_x, curr_y, 52);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -482,7 +482,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_x = x;
 				while curr_x <= 6 {
 					curr_x += 1;
-					let piece = get_piece(board, curr_x, y, 53);
+					let piece = get_piece(board, curr_x, y);
 					if piece.is_black() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
@@ -496,7 +496,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_x = x;
 				while curr_x >= 1 {
 					curr_x -= 1;
-					let piece = get_piece(board, curr_x, y, 54);
+					let piece = get_piece(board, curr_x, y);
 					if piece.is_black() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
@@ -510,7 +510,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_y = y;
 				while curr_y <= 6 {
 					curr_y += 1;
-					let piece = get_piece(board, x, curr_y, 55);
+					let piece = get_piece(board, x, curr_y);
 					if piece.is_black() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
@@ -524,7 +524,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_y = y;
 				while curr_y >= 1 {
 					curr_y -= 1;
-					let piece = get_piece(board, x, curr_y, 56);
+					let piece = get_piece(board, x, curr_y);
 					if piece.is_black() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
@@ -543,7 +543,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x <= 6 && curr_y <= 6 {
 					curr_x += 1;
 					curr_y += 1;
-					let piece = get_piece(board, curr_x, curr_y, 57);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -559,7 +559,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x <= 6 && curr_y >= 1 {
 					curr_x += 1;
 					curr_y -= 1;
-					let piece = get_piece(board, curr_x, curr_y, 58);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -575,7 +575,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x >= 1 && curr_y >= 1 {
 					curr_x -= 1;
 					curr_y -= 1;
-					let piece = get_piece(board, curr_x, curr_y, 59);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -591,7 +591,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				while curr_x >= 1 && curr_y <= 6 {
 					curr_x -= 1;
 					curr_y += 1;
-					let piece = get_piece(board, curr_x, curr_y, 60);
+					let piece = get_piece(board, curr_x, curr_y);
 					if piece.is_black() {
 						yield (curr_x, curr_y, SpecialMove::None);
 						break;
@@ -605,7 +605,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_x = x;
 				while curr_x <= 6 {
 					curr_x += 1;
-					let piece = get_piece(board, curr_x, y, 61);
+					let piece = get_piece(board, curr_x, y);
 					if piece.is_black() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
@@ -619,7 +619,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_x = x;
 				while curr_x >= 1 {
 					curr_x -= 1;
-					let piece = get_piece(board, curr_x, y, 62);
+					let piece = get_piece(board, curr_x, y);
 					if piece.is_black() {
 						yield (curr_x, y, SpecialMove::None);
 						break;
@@ -633,7 +633,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_y = y;
 				while curr_y <= 6 {
 					curr_y += 1;
-					let piece = get_piece(board, x, curr_y, 63);
+					let piece = get_piece(board, x, curr_y);
 					if piece.is_black() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
@@ -647,7 +647,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let mut curr_y = y;
 				while curr_y >= 1 {
 					curr_y -= 1;
-					let piece = get_piece(board, x, curr_y, 64);
+					let piece = get_piece(board, x, curr_y);
 					if piece.is_black() {
 						yield (x, curr_y, SpecialMove::None);
 						break;
@@ -667,7 +667,7 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let y_max = y.min(6) + 1;
 				for x in x_min..=x_max {
 					for y in y_min..=y_max {
-						if !get_piece(board, x, y, 65).is_white() {
+						if !get_piece(board, x, y).is_white() {
 							yield (x, y, SpecialMove::None);
 						}
 					}
