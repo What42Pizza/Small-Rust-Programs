@@ -19,9 +19,10 @@ pub use utils::*;
 
 pub use shared::*;
 use std::fs;
-pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, Duration, SystemTime}};
+pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, Duration, SystemTime}, sync::{LazyLock, Arc, Mutex}};
 pub use sdl3::{render::{Canvas, FRect}, video::Window, event::Event, keyboard::Mod, render::{Texture, TextureCreator}, video::WindowContext, pixels::{Color, PixelFormat}, sys::pixels::SDL_PixelFormat, mouse::MouseState};
 use image::{EncodableLayout, ImageReader};
+pub use rayon::ThreadPool;
 pub use anyhow::*;
 pub use easy_sdl3_text as sdl3_text;
 pub use ab_glyph::FontVec;
@@ -84,7 +85,9 @@ fn main_result() -> Result<()> {
 		
 		// game data
 		board: default_board(),
+		game_flags: 0b00001111,
 		state: State::NotPlaying,
+		engine_move: Arc::new(Mutex::new(None)),
 		
 	};
 	update_window_elements(&mut data, &canvas, &event_pump)?;
@@ -118,19 +121,52 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 	if let State::Playing { time_remainings, time_per_move, turn } = &mut data.state {
 		if let Some((player_time, engine_time)) = time_remainings {
 			match turn {
-				TurnData::PlayersTurn (_) => *player_time = player_time.saturating_sub(dt),
-				TurnData::EnginesTurn => *engine_time = engine_time.saturating_sub(dt)
+				TurnState::PlayersTurn (_) => *player_time = player_time.saturating_sub(dt),
+				TurnState::EnginesTurn => *engine_time = engine_time.saturating_sub(dt)
 			}
 			if player_time.is_zero() { data.state = State::GameEnded (GameEndedState::EngineWon); }
 			else if engine_time.is_zero() { data.state = State::GameEnded (GameEndedState::PlayerWon); }
 		}
 	}
 	
-	// let go of pieces
-	if !data.mouse_state.left() && let State::Playing { turn: TurnData::PlayersTurn (players_turn_state), .. } = &mut data.state {
-		if let PlayersTurnState::HoldingPiece { x, y, piece } = *players_turn_state {
-			set_piece(&mut data.board, x, y, piece);
-			*players_turn_state = PlayersTurnState::NotHoldingPiece;
+	// if playing
+	if let State::Playing { time_remainings, time_per_move, turn } = &mut data.state {
+		// if players turn
+		if let TurnState::PlayersTurn (players_turn_state) = turn {
+			// if letting go of piece
+			if !data.mouse_state.left() && let PlayersTurnState::HoldingPiece { x: from_x, y: from_y, piece } = *players_turn_state {
+				// if dropping onto board
+				if let Some((to_x, to_y)) = get_slot_from_screen_pos(data.mouse_state.x(), data.mouse_state.y(), data.window_size) {
+					let valid_move = get_white_moves(&data.board, piece, from_x, from_y, data.game_flags).find(|m| m.0 == to_x && m.1 == to_y);
+					if let Some((_, _, move_type)) = valid_move {
+						perform_move(&mut data.board, &mut data.game_flags, piece, from_x, from_y, to_x, to_y, move_type);
+						*turn = TurnState::EnginesTurn;
+						let (board, game_flags, time_remaining) = (data.board, data.game_flags, time_remainings.map(|(_, v)| v.as_millis() as usize));
+						let engine_move = data.engine_move.clone();
+						rayon::spawn(move || {
+							let new_engine_move = engine::get_move(board, game_flags, time_remaining, &THREAD_POOL);
+							*engine_move.lock().unwrap() = Some(new_engine_move);
+						});
+					} else {
+						set_piece(&mut data.board, from_x, from_y, piece);
+						*players_turn_state = PlayersTurnState::NotHoldingPiece;
+					}
+				} else {
+					set_piece(&mut data.board, from_x, from_y, piece);
+					*players_turn_state = PlayersTurnState::NotHoldingPiece;
+				}
+			}
+		}
+	}
+	
+	// if waiting for engine
+	if let State::Playing { turn, .. } = &mut data.state {
+		let mut engine_move = data.engine_move.lock().unwrap();
+		if let Some((from_x, from_y, to_x, to_y, move_type)) = *engine_move {
+			let piece = get_piece(&data.board, from_x, from_y);
+			perform_move(&mut data.board, &mut data.game_flags, piece, from_x, from_y, to_x, to_y, move_type);
+			*engine_move = None;
+			*turn = TurnState::PlayersTurn (PlayersTurnState::NotHoldingPiece);
 		}
 	}
 	

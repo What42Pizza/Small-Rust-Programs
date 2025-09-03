@@ -18,7 +18,8 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 	canvas.set_draw_color(button_color);
 	canvas.fill_rect(data.new_game_button_rect)?;
 	let new_game_pos = data.new_game_button_rect.center();
-	sdl3_text::render_text_subpixel("New Game", (data.new_game_button_rect.h * 0.7) as u32, new_game_pos.0 as i32, new_game_pos.1 as i32, sdl3_text::HAlign::Center, sdl3_text::VAlign::Center, Color::RGB(30, 30, 30), button_color, canvas, texture_creator, text_cache)?;
+	let mut render_text_settings = sdl3_text::TextRenderingSettings::new_subpixel((data.new_game_button_rect.h * 0.7) as u32, sdl3_text::HAlign::Center, sdl3_text::VAlign::Center, Color::RGB(30, 30, 30), button_color, canvas, texture_creator, text_cache);
+	sdl3_text::render_text_subpixel("New Game", new_game_pos.0 as i32, new_game_pos.1 as i32, &mut render_text_settings)?;
 	
 	// chess board
 	let mut board_rect = FRect::new(screen_mid.0 - height * 0.26, screen_mid.1 - height * 0.26, height * 0.52, height * 0.52);
@@ -40,19 +41,26 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 	let size = (height * 0.05) as u32;
 	let x = screen_mid.0 + height * 0.25 + width * 0.025;
 	let mut y = height * 0.25;
+	let mut render_text_settings = sdl3_text::TextRenderingSettings::new_subpixel(size, sdl3_text::HAlign::Left, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache);
 	if let State::Playing { time_remainings: Some((player_time, engine_time)), time_per_move: _, turn: _ } = &data.state {
-		sdl3_text::render_text_subpixel(format!("Your time left: {}", format_min_sec(*player_time)), size, x as i32, y as i32, sdl3_text::HAlign::Left, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache)?;
+		sdl3_text::render_text_subpixel(format!("Your time left: {}", format_min_sec(*player_time)), x as i32, y as i32, &mut render_text_settings)?;
 		y += size as f32 * 1.1;
-		sdl3_text::render_text_subpixel(format!("Engine's time left: {}", format_min_sec(*engine_time)), size, x as i32, y as i32, sdl3_text::HAlign::Left, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache)?;
+		sdl3_text::render_text_subpixel(format!("Engine's time left: {}", format_min_sec(*engine_time)), x as i32, y as i32, &mut render_text_settings)?;
 		y += size as f32 * 1.1;
 	}
 	if let State::Playing { time_remainings: _, time_per_move: Some(time_per_move), turn: _ } = &data.state {
 		let size = size * 7 / 10;
-		sdl3_text::render_text_subpixel(format!("Time per move: {}", format_min_sec(*time_per_move)), size, x as i32, y as i32, sdl3_text::HAlign::Left, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache)?;
+		sdl3_text::render_text_subpixel(format!("Time per move: {}", format_min_sec(*time_per_move)), x as i32, y as i32, &mut render_text_settings)?;
+	}
+	render_text_settings.v_align = sdl3_text::VAlign::Bottom;
+	let y = height * 0.75;
+	if let State::Playing { turn, .. } = &data.state {
+		let is_players_turn = *turn != TurnState::EnginesTurn;
+		sdl3_text::render_text_subpixel(if is_players_turn {"Your Turn"} else {"Engine's turn"}, x as i32, y as i32, &mut render_text_settings)?;
 	}
 	
 	// held piece
-	if let State::Playing { turn: TurnData::PlayersTurn (PlayersTurnState::HoldingPiece { x, y, piece }), .. } = &data.state {
+	if let State::Playing { turn: TurnState::PlayersTurn (PlayersTurnState::HoldingPiece { x, y, piece }), .. } = &data.state {
 		let slot_width = height / 16.0;
 		let texture = get_texture_for_piece(*piece, textures).expect("Cannot hold no Piece::None");
 		let dst = FRect::new(data.mouse_state.x() - slot_width * 0.5, data.mouse_state.y() - slot_width * 0.5, slot_width, slot_width);

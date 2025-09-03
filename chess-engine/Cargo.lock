@@ -117,9 +117,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.9.3"
+version = "2.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34efbcccd345379ca2868b2b2c9d3782e9cc58ba87bc7d79d5b53d9c9ae6f25d"
+checksum = "2261d10cca569e4643e526d8dc2e62e433cc8aba21ab764233731f8d369bf394"
 
 [[package]]
 name = "bitstream-io"
@@ -172,10 +172,11 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.34"
+version = "1.2.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42bc4aea80032b7bf409b0bc7ccad88853858911b7713a8062fdc0623867bedc"
+checksum = "590f9024a68a8c40351881787f1934dc11afd69090f5edb6831464694d836ea3"
 dependencies = [
+ "find-msvc-tools",
  "jobserver",
  "libc",
  "shlex",
@@ -271,7 +272,7 @@ version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8b9f2e4c67f833b660cdb0a3523065869fb35570177239812ed4c905aeff87b"
 dependencies = [
- "bitflags 2.9.3",
+ "bitflags 2.9.4",
  "crossterm_winapi",
  "derive_more",
  "document-features",
@@ -325,7 +326,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "89a09f22a6c6069a18470eb92d2298acf25463f14256d24778e1230d789a2aec"
 dependencies = [
- "bitflags 2.9.3",
+ "bitflags 2.9.4",
  "block2",
  "libc",
  "objc2",
@@ -348,8 +349,8 @@ checksum = "0f6f2a77eee90d1d7591b3b7671a744710c593dae97cb97ab2489e550d1b0113"
 
 [[package]]
 name = "easy-sdl3-text"
-version = "0.2.1"
-source = "git+https://github.com/What42Pizza/easy-sdl3-text.git#db0ae3c7664908e047b63c07662da3d3ae08c91c"
+version = "0.3.1"
+source = "git+https://github.com/What42Pizza/easy-sdl3-text.git#2ec23d0f9aa4e1a1556f55cd396a5388b313f08b"
 dependencies = [
  "ab_glyph",
  "rayon",
@@ -434,6 +435,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "find-msvc-tools"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e178e4fba8a2726903f6ba98a6d221e76f9c12c650d5dc0e6afdc50677b49650"
+
+[[package]]
 name = "flate2"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -451,6 +458,7 @@ dependencies = [
  "anyhow",
  "easy-configuration-format",
  "easy-sdl3-text",
+ "engine",
  "image",
  "rayon",
  "rfd",
@@ -886,7 +894,7 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6f29f568bec459b0ddff777cec4fe3fd8666d82d5a40ebd0ff7e66134f89bcc"
 dependencies = [
- "bitflags 2.9.3",
+ "bitflags 2.9.4",
  "block2",
  "objc2",
  "objc2-foundation",
@@ -898,7 +906,7 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c10c2894a6fed806ade6027bcd50662746363a9589d3ec9d9bef30a4e4bc166"
 dependencies = [
- "bitflags 2.9.3",
+ "bitflags 2.9.4",
  "dispatch2",
  "objc2",
 ]
@@ -915,7 +923,7 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "900831247d2fe1a09a683278e5384cfb8c80c79fe6b166f9d14bfdde0ea1b03c"
 dependencies = [
- "bitflags 2.9.3",
+ "bitflags 2.9.4",
  "objc2",
  "objc2-core-foundation",
 ]
@@ -1174,7 +1182,7 @@ version = "0.5.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5407465600fb0548f1442edf71dd20683c6ed326200ace4b1ef0763521bb3b77"
 dependencies = [
- "bitflags 2.9.3",
+ "bitflags 2.9.4",
 ]
 
 [[package]]
@@ -1219,7 +1227,7 @@ version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11181fbabf243db407ef8df94a6ce0b2f9a733bd8be4ad02b4eda9602296cac8"
 dependencies = [
- "bitflags 2.9.3",
+ "bitflags 2.9.4",
  "errno",
  "libc",
  "linux-raw-sys",
@@ -1244,7 +1252,7 @@ version = "0.14.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a99b2afb918ecbbda07d4b742bc4b52ea3985a0b24740593d5a3109211c63db"
 dependencies = [
- "bitflags 2.9.3",
+ "bitflags 2.9.4",
  "lazy_static",
  "libc",
  "sdl3-image-sys",
@@ -1272,15 +1280,15 @@ dependencies = [
 
 [[package]]
 name = "sdl3-src"
-version = "3.2.20"
+version = "3.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcf3cbc4d49f7ab594e9f5915fd7a051a327544077a8f1df83411f063df4be08"
+checksum = "8447739fe8a492670e2f8c60bf821bb0f4260bd05019e4333ed483602a5cfe75"
 
 [[package]]
 name = "sdl3-sys"
-version = "0.5.4+SDL3-3.2.20"
+version = "0.5.5+SDL3-3.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c4f7f348dea346f67f38bc1392bf1edd9250d4c586479778e849f6ee61af2d8"
+checksum = "488b4c68d9c0a450087a8b7c9dc6921483354127b0e60033d2d9b8f6a281331b"
 dependencies = [
  "cmake",
  "rpkg-config",

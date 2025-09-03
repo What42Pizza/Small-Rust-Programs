@@ -26,11 +26,9 @@ pub fn handle_event(data: &mut AppData, event: Event) -> Result<()> {
 			
 			// dragging pieces
 			if let Some((x, y)) = get_slot_from_screen_pos(x, y, data.window_size) {
-				if let State::Playing { turn: TurnData::PlayersTurn (players_turn_state), .. } = &mut data.state {
+				if let State::Playing { turn: TurnState::PlayersTurn (players_turn_state), .. } = &mut data.state {
 					let piece = get_piece(&data.board, x, y);
-					println!("A");
 					if piece.is_white() {
-						println!("B");
 						set_piece(&mut data.board, x, y, Piece::None);
 						*players_turn_state = PlayersTurnState::HoldingPiece { x, y, piece };
 					}

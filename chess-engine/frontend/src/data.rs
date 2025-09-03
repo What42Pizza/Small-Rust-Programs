@@ -2,6 +2,8 @@ use crate::*;
 
 
 
+pub static THREAD_POOL: LazyLock<ThreadPool> = LazyLock::new(|| rayon::ThreadPoolBuilder::new().num_threads(16).build().unwrap());
+
 pub struct AppData {
 	
 	// basics
@@ -19,7 +21,9 @@ pub struct AppData {
 	
 	// game data
 	pub board: Board,
+	pub game_flags: u8, // flags: 0: can castle with player left rook, 1: can castle with player right rook, 2: can castle with engine left rook, 3: can castle with engine right rook, 4: can en passant, 5-7: en passant file
 	pub state: State,
+	pub engine_move: Arc<Mutex<Option<(u8, u8, u8, u8, MoveType)>>>,
 	
 }
 
@@ -31,18 +35,18 @@ pub enum State {
 	Playing {
 		time_remainings: Option<(Duration, Duration)>,
 		time_per_move: Option<Duration>,
-		turn: TurnData,
+		turn: TurnState,
 	},
 	GameEnded (GameEndedState),
 }
 
-#[derive(Debug)]
-pub enum TurnData {
+#[derive(Debug, PartialEq)]
+pub enum TurnState {
 	PlayersTurn (PlayersTurnState),
 	EnginesTurn,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum PlayersTurnState {
 	NotHoldingPiece,
 	HoldingPiece {x: u8, y: u8, piece: Piece},

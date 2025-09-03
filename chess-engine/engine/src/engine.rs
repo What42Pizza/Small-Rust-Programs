@@ -16,7 +16,7 @@ pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<
 		(time_remaining as f32).powf(0.7) as usize
 	} else {20 * 1000};
 	
-	static mut OUTPUTS: [(f32, u8, u8, SpecialMove); 64] = [(-100000000.0, 0, 0, SpecialMove::None); 64];
+	static mut OUTPUTS: [(f32, u8, u8, MoveType); 64] = [(-100000000.0, 0, 0, MoveType::Normal); 64];
 	thread_pool.scope(|s| {
 		#[allow(static_mut_refs)]
 		for (i, output) in unsafe {OUTPUTS.iter_mut().enumerate()} {
@@ -28,7 +28,7 @@ pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<
 		}
 	});
 	
-	let (mut from_i, mut best_move) = (0, (-100000000.0, 0, 0, SpecialMove::None));
+	let (mut from_i, mut best_move) = (0, (-100000000.0, 0, 0, MoveType::Normal));
 	#[allow(static_mut_refs)]
 	for (i, output) in unsafe {OUTPUTS.iter().enumerate()} {
 		if output.0 > best_move.0 {
@@ -37,7 +37,7 @@ pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<
 	}
 	
 	let (x, y) = (from_i % 8, from_i / 8);
-	let piece = get_piece(board, x, y, 66);
+	let piece = get_piece(board, x, y);
 	perform_move(board, game_flags, piece, x, y, best_move.1, best_move.2, best_move.3);
 	
 	//unsafe {
@@ -50,13 +50,45 @@ pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<
 
 
 
+pub fn get_move(board: Board, game_flags: u8, time_remaining: Option<usize>, thread_pool: &ThreadPool) -> (u8, u8, u8, u8, MoveType) {
+	
+	let time_remaining = if let Some(time_remaining) = time_remaining {
+		(time_remaining as f32).powf(0.7) as usize
+	} else {20 * 1000};
+	
+	static mut OUTPUTS: [(f32, u8, u8, MoveType); 64] = [(-100000000.0, 0, 0, MoveType::Normal); 64];
+	thread_pool.scope(|s| {
+		#[allow(static_mut_refs)]
+		for (i, output) in unsafe {OUTPUTS.iter_mut().enumerate()} {
+			//let board = *board;
+			//let game_flags = *game_flags;
+			s.spawn(move |_s| {
+				*output = try_black_move(board, time_remaining, i as u8, game_flags, 6);
+			});
+		}
+	});
+	
+	let (mut from_i, mut best_move) = (0, (-100000000.0, 0, 0, MoveType::Normal));
+	#[allow(static_mut_refs)]
+	for (i, output) in unsafe {OUTPUTS.iter().enumerate()} {
+		if output.0 > best_move.0 {
+			(from_i, best_move) = (i as u8, *output);
+		}
+	}
+	
+	let (from_x, from_y) = (from_i % 8, from_i / 8);
+	(from_x, from_y, best_move.1, best_move.2, best_move.3)
+}
+
+
+
 static LOCK: Mutex<()> = Mutex::new(());
 
-fn try_black_move(board: Board, ending_millis: usize, index: u8, game_flags: u8, depth: u8) -> (f32, u8, u8, SpecialMove) {
+fn try_black_move(board: Board, ending_millis: usize, index: u8, game_flags: u8, depth: u8) -> (f32, u8, u8, MoveType) {
 	let depth = depth - 1;
 	let (x, y) = (index % 8, index / 8);
-	let piece = get_piece(&board, x, y, 67);
-	let mut best_move = (-100000000.0, 0, 0, SpecialMove::None); // searching for the best move for the engine
+	let piece = get_piece(&board, x, y);
+	let mut best_move = (-100000000.0, 0, 0, MoveType::Normal); // searching for the best move for the engine
 	let mut alpha = -100000000.0;
 	let beta = 100000000.0;
 	for (move_x, move_y, move_type) in get_black_moves(&board, piece, x, y, game_flags) {
@@ -156,44 +188,6 @@ fn try_white_moves(board: Board, ending_millis: usize, game_flags: u8, alpha: f3
 	}
 	//if move_count > 0 {score} else {0.0}
 	score
-}
-
-#[allow(clippy::too_many_arguments)]
-fn perform_move(board: &mut Board, game_flags: &mut u8, piece: Piece, from_x: u8, from_y: u8, to_x: u8, to_y: u8, move_type: SpecialMove) {
-	*game_flags &= 0b00001111; // reset en passant data
-	set_piece(board, from_x, from_y, Piece::None);
-	set_piece(board, to_x, to_y, piece);
-	match move_type {
-		SpecialMove::None => {}
-		SpecialMove::EnPassant => {
-			set_piece(board, to_x, from_y, Piece::None);
-		}
-		SpecialMove::CastleKingsSide => {
-			set_piece(board, 7, to_y, Piece::None);
-			set_piece(board, 5, to_y, Piece::BlackRook.copy_owner(piece));
-			*game_flags &= if piece.is_white() {0b11111100} else {0b11110011};
-		}
-		SpecialMove::CastleQueensSide => {
-			set_piece(board, 0, to_y, Piece::None);
-			set_piece(board, 3, to_y, Piece::BlackRook.copy_owner(piece));
-			*game_flags &= if piece.is_white() {0b11111100} else {0b11110011};
-		}
-		SpecialMove::PromoteKnight => {
-			set_piece(board, to_x, to_y, Piece::WhiteKnight.copy_owner(piece));
-		}
-		SpecialMove::PromoteBishop => {
-			set_piece(board, to_x, to_y, Piece::WhiteBishop.copy_owner(piece));
-		}
-		SpecialMove::PromoteRook => {
-			set_piece(board, to_x, to_y, Piece::WhiteRook.copy_owner(piece));
-		}
-		SpecialMove::PromoteQueen => {
-			set_piece(board, to_x, to_y, Piece::WhiteQueen.copy_owner(piece));
-		}
-	}
-	if piece as u8 & 0b111 == Piece::BlackPawn as u8 && to_y.abs_diff(from_y) == 2 {
-		*game_flags |= (to_x << 5) | 0b00010000; // allow en passant for next move
-	}
 }
 
 

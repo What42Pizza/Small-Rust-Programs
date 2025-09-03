@@ -115,7 +115,7 @@ pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dy
 	for x in 0..8 {
 		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
 		write!(stdout, "{}", " ".on_color(background_color))?;
-		get_piece(board, x, 7, 0).print_self(background_color, stdout)?;
+		get_piece(board, x, 7).print_self(background_color, stdout)?;
 		write!(stdout, "{}", " ".on_color(background_color))?;
 	}
 	write!(stdout, "\n  ")?;
@@ -127,7 +127,7 @@ pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dy
 	for x in 0..8 {
 		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
 		write!(stdout, "{}", " ".on_color(background_color))?;
-		get_piece(board, x, 6, 1).print_self(background_color, stdout)?;
+		get_piece(board, x, 6).print_self(background_color, stdout)?;
 		write!(stdout, "{}", " ".on_color(background_color))?;
 	}
 	write!(stdout, "\n  ")?;
@@ -139,7 +139,7 @@ pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dy
 	for x in 0..8 {
 		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
 		write!(stdout, "{}", " ".on_color(background_color))?;
-		get_piece(board, x, 5, 2).print_self(background_color, stdout)?;
+		get_piece(board, x, 5).print_self(background_color, stdout)?;
 		write!(stdout, "{}", " ".on_color(background_color))?;
 	}
 	write!(stdout, "\n  ")?;
@@ -151,7 +151,7 @@ pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dy
 	for x in 0..8 {
 		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
 		write!(stdout, "{}", " ".on_color(background_color))?;
-		get_piece(board, x, 4, 3).print_self(background_color, stdout)?;
+		get_piece(board, x, 4).print_self(background_color, stdout)?;
 		write!(stdout, "{}", " ".on_color(background_color))?;
 	}
 	write!(stdout, "\n  ")?;
@@ -163,7 +163,7 @@ pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dy
 	for x in 0..8 {
 		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
 		write!(stdout, "{}", " ".on_color(background_color))?;
-		get_piece(board, x, 3, 4).print_self(background_color, stdout)?;
+		get_piece(board, x, 3).print_self(background_color, stdout)?;
 		write!(stdout, "{}", " ".on_color(background_color))?;
 	}
 	write!(stdout, "\n  ")?;
@@ -175,7 +175,7 @@ pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dy
 	for x in 0..8 {
 		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
 		write!(stdout, "{}", " ".on_color(background_color))?;
-		get_piece(board, x, 2, 5).print_self(background_color, stdout)?;
+		get_piece(board, x, 2).print_self(background_color, stdout)?;
 		write!(stdout, "{}", " ".on_color(background_color))?;
 	}
 	write!(stdout, "\n  ")?;
@@ -187,7 +187,7 @@ pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dy
 	for x in 0..8 {
 		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_1} else {BACKGROUND_COLOR_2};
 		write!(stdout, "{}", " ".on_color(background_color))?;
-		get_piece(board, x, 1, 6).print_self(background_color, stdout)?;
+		get_piece(board, x, 1).print_self(background_color, stdout)?;
 		write!(stdout, "{}", " ".on_color(background_color))?;
 	}
 	write!(stdout, "\n  ")?;
@@ -199,7 +199,7 @@ pub fn print_board_here(board: &Board, stdout: &mut Stdout) -> Result<(), Box<dy
 	for x in 0..8 {
 		let background_color = if x % 2 == 0 {BACKGROUND_COLOR_2} else {BACKGROUND_COLOR_1};
 		write!(stdout, "{}", " ".on_color(background_color))?;
-		get_piece(board, x, 0, 7).print_self(background_color, stdout)?;
+		get_piece(board, x, 0).print_self(background_color, stdout)?;
 		write!(stdout, "{}", " ".on_color(background_color))?;
 	}
 	write!(stdout, "\n  ")?;
@@ -310,9 +310,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			let to_rank = (player_move_chars[3] as u8).wrapping_sub(49);
 			if to_rank > 7 {output!(stdout, 21, "Invalid input, ending rank must be '1' through '8'"); continue 'player_move;}
 			if to_file == from_file && to_rank == from_rank {output!(stdout, 21, "Invalid input, cannot move piece to itself"); continue 'player_move;}
-			let from_piece = get_piece(&board, from_file, from_rank, 68);
+			let from_piece = get_piece(&board, from_file, from_rank);
 			if !from_piece.is_white() {output!(stdout, 21, "Invalid input, you do not have a piece at {}{}", player_move_chars[0], player_move_chars[1]); continue 'player_move;}
-			let to_piece = get_piece(&board, to_file, to_rank, 69);
+			let to_piece = get_piece(&board, to_file, to_rank);
 			if to_piece.is_white() {output!(stdout, 21, "Invalid input, you already have a piece at {}{}", player_move_chars[2], player_move_chars[3]); continue 'player_move;}
 			
 			//let is_slot_under_attack = |x: u8, y: u8| {
@@ -381,9 +381,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			let is_valid = 'is_valid: {match from_piece {
 				Piece::WhitePawn => {
 					if to_file == from_file && to_rank == from_rank + 1 && to_piece == Piece::None {break 'is_valid true;}; // move forward
-					if to_file == from_file && from_rank == 1 && to_rank == 3 && get_piece(&board, from_file, 2, 83) == Piece::None && to_piece == Piece::None {break 'is_valid true;}; // starting move two forward
+					if to_file == from_file && from_rank == 1 && to_rank == 3 && get_piece(&board, from_file, 2) == Piece::None && to_piece == Piece::None {break 'is_valid true;}; // starting move two forward
 					if to_file.abs_diff(from_file) == 1 && to_rank == from_rank + 1 && to_piece.is_black() {break 'is_valid true;}; // capture
-					if to_file.abs_diff(from_file) == 1 && to_rank == 6 && get_piece(&board, to_file, 5, 84) == Piece::BlackPawn && get_piece(&prev_board_state, to_file, 5, 85) == Piece::None {break 'is_valid true;}; // en passant
+					if to_file.abs_diff(from_file) == 1 && to_rank == 6 && get_piece(&board, to_file, 5) == Piece::BlackPawn && get_piece(&prev_board_state, to_file, 5) == Piece::None {break 'is_valid true;}; // en passant
 					false
 				}
 				Piece::WhiteKnight => {
@@ -402,7 +402,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 					for _ in 1..x_len {
 						x = x.wrapping_add(x_dir);
 						y = y.wrapping_add(y_dir);
-						if get_piece(&board, x, y, 86) != Piece::None {break 'is_valid false;}
+						if get_piece(&board, x, y) != Piece::None {break 'is_valid false;}
 					}
 					true
 				}
@@ -414,7 +414,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 						let mut y = from_rank;
 						for _ in 1..y_len {
 							y = y.wrapping_add(y_dir);
-							if get_piece(&board, from_file, y, 87) != Piece::None {break 'is_valid false;}
+							if get_piece(&board, from_file, y) != Piece::None {break 'is_valid false;}
 						}
 						true
 					} else if y_len == 0 {
@@ -422,7 +422,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 						let mut x = from_file;
 						for _ in 1..x_len {
 							x = x.wrapping_add(x_dir);
-							if get_piece(&board, x, from_rank, 88) != Piece::None {break 'is_valid false;}
+							if get_piece(&board, x, from_rank) != Piece::None {break 'is_valid false;}
 						}
 						true
 					} else {
@@ -445,7 +445,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 						let mut y = from_rank;
 						for _ in 1..y_len {
 							y = y.wrapping_add(y_dir);
-							if get_piece(&board, from_file, y, 89) != Piece::None {break 'is_valid false;}
+							if get_piece(&board, from_file, y) != Piece::None {break 'is_valid false;}
 						}
 						true
 					} else if y_len == 0 {
@@ -453,7 +453,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 						let mut x = from_file;
 						for _ in 1..x_len {
 							x = x.wrapping_add(x_dir);
-							if get_piece(&board, x, from_rank, 90) != Piece::None {break 'is_valid false;}
+							if get_piece(&board, x, from_rank) != Piece::None {break 'is_valid false;}
 						}
 						true
 					} else if x_len == y_len {
@@ -464,7 +464,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 						for _ in 1..x_len {
 							x = x.wrapping_add(x_dir);
 							y = y.wrapping_add(y_dir);
-							if get_piece(&board, x, y, 91) != Piece::None {break 'is_valid false;}
+							if get_piece(&board, x, y) != Piece::None {break 'is_valid false;}
 						}
 						true
 					} else {

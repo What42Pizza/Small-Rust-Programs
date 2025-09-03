@@ -6,6 +6,7 @@ default-run = "frontend"
 
 [dependencies]
 shared = { path = "../shared" }
+engine = { path = "../engine" }
 anyhow = "1.0.99"
 sdl3 = { version = "0.14.36", features = ["build-from-source"] }
 easy-sdl3-text = { git = "https://github.com/What42Pizza/easy-sdl3-text.git" }

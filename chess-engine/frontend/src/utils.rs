@@ -9,7 +9,7 @@ impl State {
 		Self::Playing {
 			time_remainings: if total_time.is_zero() {None} else {Some((total_time, total_time))},
 			time_per_move: if time_per_move.is_zero() {None} else {Some(time_per_move)},
-			turn: TurnData::PlayersTurn (PlayersTurnState::NotHoldingPiece),
+			turn: TurnState::PlayersTurn (PlayersTurnState::NotHoldingPiece),
 		}
 	}
 }
