@@ -36,6 +36,12 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 			}
 		}
 	}
+	if let Some((x1, y1, x2, y2)) = data.ring_selectors {
+		let pos1 = get_slot_screen_rect(x1, y1, data.window_size);
+		let pos2 = get_slot_screen_rect(x2, y2, data.window_size);
+		canvas.copy(&textures.ring, None, pos1)?;
+		canvas.copy(&textures.ring, None, pos2)?;
+	}
 	
 	// game data text
 	let size = (height * 0.05) as u32;
@@ -57,6 +63,14 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 	if let State::Playing { turn, .. } = &data.state {
 		let is_players_turn = *turn != TurnState::EnginesTurn;
 		sdl3_text::render_text_subpixel(if is_players_turn {"Your Turn"} else {"Engine's turn"}, x as i32, y as i32, &mut render_text_settings)?;
+	}
+	if let State::GameEnded (ended_state) = data.state {
+		let mut render_text_settings = sdl3_text::TextRenderingSettings::new_subpixel(size, sdl3_text::HAlign::Center, sdl3_text::VAlign::Top, Color::RGB(30, 30, 30), data.settings.background_color, canvas, texture_creator, text_cache);
+		match ended_state {
+			GameEndedState::PlayerWon => sdl3_text::render_text_subpixel("You have won", screen_mid.0 as i32, (height * 0.77) as i32, &mut render_text_settings)?,
+			GameEndedState::EngineWon => sdl3_text::render_text_subpixel("You have lost", screen_mid.0 as i32, (height * 0.77) as i32, &mut render_text_settings)?,
+			GameEndedState::NeitherWon => sdl3_text::render_text_subpixel("You have tied", screen_mid.0 as i32, (height * 0.77) as i32, &mut render_text_settings)?,
+		}
 	}
 	
 	// held piece
@@ -102,6 +116,7 @@ fn get_texture_for_piece<'a, 'b>(piece: Piece, textures: &'b Textures<'a>) -> Op
 pub fn load_textures<'a>(resources_path: &Path, texture_creator: &'a TextureCreator<WindowContext>) -> Result<Textures<'a>> {
 	let textures_path = resources_path.join("textures");
 	Ok(Textures {
+		ring: load_image_from_path(textures_path.join("ring.png"), texture_creator)?,
 		black_pawn: load_image_from_path(textures_path.join("black-pawn.png"), texture_creator)?,
 		black_knight: load_image_from_path(textures_path.join("black-knight.png"), texture_creator)?,
 		black_bishop: load_image_from_path(textures_path.join("black-bishop.png"), texture_creator)?,

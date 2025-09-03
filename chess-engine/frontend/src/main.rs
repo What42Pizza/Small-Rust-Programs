@@ -88,6 +88,7 @@ fn main_result() -> Result<()> {
 		game_flags: 0b00001111,
 		state: State::NotPlaying,
 		engine_move: Arc::new(Mutex::new(None)),
+		ring_selectors: None,
 		
 	};
 	update_window_elements(&mut data, &canvas, &event_pump)?;
@@ -140,9 +141,13 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 					let valid_move = get_white_moves(&data.board, piece, from_x, from_y, data.game_flags).find(|m| m.0 == to_x && m.1 == to_y);
 					if let Some((_, _, move_type)) = valid_move {
 						perform_move(&mut data.board, &mut data.game_flags, piece, from_x, from_y, to_x, to_y, move_type);
+						if let Some((player_time, _engine_time)) = time_remainings && let Some(time_per_move) = time_per_move {
+							*player_time += *time_per_move;
+						}
 						*turn = TurnState::EnginesTurn;
 						let (board, game_flags, time_remaining) = (data.board, data.game_flags, time_remainings.map(|(_, v)| v.as_millis() as usize));
 						let engine_move = data.engine_move.clone();
+						data.ring_selectors = Some((from_x, from_y, to_x, to_y));
 						rayon::spawn(move || {
 							let new_engine_move = engine::get_move(board, game_flags, time_remaining, &THREAD_POOL);
 							*engine_move.lock().unwrap() = Some(new_engine_move);
@@ -160,14 +165,45 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 	}
 	
 	// if waiting for engine
-	if let State::Playing { turn, .. } = &mut data.state {
+	if let State::Playing { turn, time_remainings, time_per_move } = &mut data.state {
 		let mut engine_move = data.engine_move.lock().unwrap();
 		if let Some((from_x, from_y, to_x, to_y, move_type)) = *engine_move {
 			let piece = get_piece(&data.board, from_x, from_y);
 			perform_move(&mut data.board, &mut data.game_flags, piece, from_x, from_y, to_x, to_y, move_type);
 			*engine_move = None;
 			*turn = TurnState::PlayersTurn (PlayersTurnState::NotHoldingPiece);
+			data.ring_selectors = Some((from_x, from_y, to_x, to_y));
+			if let (Some((_player_time, engine_time)), Some(time_per_move)) = (time_remainings, time_per_move) {
+				*engine_time += *time_per_move;
+			}
 		}
+	}
+	
+	// check for king captures
+	if let State::Playing { turn, .. } = &data.state {
+		let mut player_has_king = false;
+		let mut engine_has_king = false;
+		for x in 0..4 {
+			for y in 0..8 {
+				let x = x * 2;
+				let (piece1, piece2) = get_doubled_pieces(&data.board, x, y);
+				match piece1 {
+					Piece::WhiteKing => player_has_king = true,
+					Piece::BlackKing => engine_has_king = true,
+					_ => {}
+				}
+				match piece2 {
+					Piece::WhiteKing => player_has_king = true,
+					Piece::BlackKing => engine_has_king = true,
+					_ => {}
+				}
+			}
+		}
+		if let TurnState::PlayersTurn (PlayersTurnState::HoldingPiece { x, y, piece }) = turn {
+			player_has_king |= *piece == Piece::WhiteKing;
+		}
+		if !player_has_king { data.state = State::GameEnded (GameEndedState::EngineWon); }
+		if !engine_has_king { data.state = State::GameEnded (GameEndedState::PlayerWon); }
 	}
 	
 }

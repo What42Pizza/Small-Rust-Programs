@@ -2,7 +2,7 @@ format 1
 
 
 # in seconds, leave as 0 to disable
-total time: 600
+total time: 300
 time per move: 5
 
 
@@ -10,21 +10,21 @@ time per move: 5
 font: "Inter_24pt-Regular.ttf"
 
 
-background color red:   248
-background color green: 216
-background color blue:  166
+background color red:   249
+background color green: 215
+background color blue:  161
 
 top bar color red:   255
 top bar color green: 231
-top bar color blue:  190
+top bar color blue:  187
 
-top bar buttons color red:   243
-top bar buttons color green: 212
-top bar buttons color blue:  161
+top bar buttons color red:   248
+top bar buttons color green: 213
+top bar buttons color blue:  157
 
-top bar buttons darkened color red:   218
-top bar buttons darkened color green: 190
-top bar buttons darkened color blue:  146
+top bar buttons darkened color red:   223
+top bar buttons darkened color green: 192
+top bar buttons darkened color blue:  141
 
 board color dark red:   221
 board color dark green: 178
@@ -34,6 +34,6 @@ board color light red:   255
 board color light green: 237
 board color light blue:  198
 
-board trim color red:   235
+board trim color red:   238
 board trim color green: 198
-board trim color blue:  147
+board trim color blue:  142

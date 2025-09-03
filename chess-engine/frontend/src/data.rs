@@ -24,6 +24,7 @@ pub struct AppData {
 	pub game_flags: u8, // flags: 0: can castle with player left rook, 1: can castle with player right rook, 2: can castle with engine left rook, 3: can castle with engine right rook, 4: can en passant, 5-7: en passant file
 	pub state: State,
 	pub engine_move: Arc<Mutex<Option<(u8, u8, u8, u8, MoveType)>>>,
+	pub ring_selectors: Option<(u8, u8, u8, u8)>,
 	
 }
 
@@ -52,7 +53,7 @@ pub enum PlayersTurnState {
 	HoldingPiece {x: u8, y: u8, piece: Piece},
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum GameEndedState {
 	PlayerWon,
 	EngineWon,
@@ -62,6 +63,7 @@ pub enum GameEndedState {
 
 
 pub struct Textures<'a> {
+	pub ring: Texture<'a>,
 	pub black_pawn: Texture<'a>,
 	pub black_knight: Texture<'a>,
 	pub black_bishop: Texture<'a>,
