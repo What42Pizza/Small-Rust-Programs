@@ -44,6 +44,7 @@ fn main_result() -> Result<()> {
 	let resources_path = get_resources_path()?;
 	let settings = load_settings(&resources_path.join("settings.txt"))?;
 	
+	engine::init();
 	let sdl_context = sdl3::init().unwrap();
 	let video_subsystem = sdl_context.video().unwrap();
 	let window = video_subsystem

@@ -336,10 +336,10 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 						}
 					}
 				}
-				if game_flags & 0b00000100 > 0 {
+				if game_flags & 0b00000100 > 0 && get_piece(board, 1, 7) == Piece::None && get_piece(board, 2, 7) == Piece::None && get_piece(board, 3, 7) == Piece::None {
 					yield (2, 7, MoveType::CastleQueensSide);
 				}
-				if game_flags & 0b00001000 > 0 {
+				if game_flags & 0b00001000 > 0 && get_piece(board, 5, 7) == Piece::None && get_piece(board, 6, 7) == Piece::None {
 					yield (6, 7, MoveType::CastleKingsSide);
 				}
 			}
@@ -672,10 +672,10 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 						}
 					}
 				}
-				if game_flags & 0b00000001 > 0 {
+				if game_flags & 0b00000001 > 0 && get_piece(board, 1, 0) == Piece::None && get_piece(board, 2, 0) == Piece::None && get_piece(board, 3, 0) == Piece::None {
 					yield (2, 0, MoveType::CastleQueensSide);
 				}
-				if game_flags & 0b00000010 > 0 {
+				if game_flags & 0b00000010 > 0 && get_piece(board, 5, 0) == Piece::None && get_piece(board, 6, 0) == Piece::None {
 					yield (6, 0, MoveType::CastleKingsSide);
 				}
 			}

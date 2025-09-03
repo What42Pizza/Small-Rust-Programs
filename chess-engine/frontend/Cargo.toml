@@ -13,5 +13,5 @@ easy-sdl3-text = { git = "https://github.com/What42Pizza/easy-sdl3-text.git" }
 ab_glyph = "0.2.31"
 image = "0.25.6"
 rfd = { version = "0.15.4", default-features = false, features = ["gtk3"] }
-rayon = "*"
+rayon = "1.11.0"
 easy-configuration-format = "0.2.3"

@@ -10,60 +10,21 @@ pub fn init() {
 
 
 
-pub fn make_move(board: &mut Board, game_flags: &mut u8, time_remaining: Option<usize>, thread_pool: &ThreadPool) {
-	
-	let time_remaining = if let Some(time_remaining) = time_remaining {
-		(time_remaining as f32).powf(0.7) as usize
-	} else {20 * 1000};
-	
-	static mut OUTPUTS: [(f32, u8, u8, MoveType); 64] = [(-100000000.0, 0, 0, MoveType::Normal); 64];
-	thread_pool.scope(|s| {
-		#[allow(static_mut_refs)]
-		for (i, output) in unsafe {OUTPUTS.iter_mut().enumerate()} {
-			let board = *board;
-			let game_flags = *game_flags;
-			s.spawn(move |_s| {
-				*output = try_black_move(board, time_remaining, i as u8, game_flags, 6);
-			});
-		}
-	});
-	
-	let (mut from_i, mut best_move) = (0, (-100000000.0, 0, 0, MoveType::Normal));
-	#[allow(static_mut_refs)]
-	for (i, output) in unsafe {OUTPUTS.iter().enumerate()} {
-		if output.0 > best_move.0 {
-			(from_i, best_move) = (i as u8, *output);
-		}
-	}
-	
-	let (x, y) = (from_i % 8, from_i / 8);
-	let piece = get_piece(board, x, y);
-	perform_move(board, game_flags, piece, x, y, best_move.1, best_move.2, best_move.3);
-	
-	//unsafe {
-	//	#[allow(static_mut_refs)]
-	//	let count = COUNTER.load(std::sync::atomic::Ordering::Relaxed);
-	//	panic!("{count}");
-	//}
-	
-}
-
-
-
 pub fn get_move(board: Board, game_flags: u8, time_remaining: Option<usize>, thread_pool: &ThreadPool) -> (u8, u8, u8, u8, MoveType) {
 	
-	let time_remaining = if let Some(time_remaining) = time_remaining {
-		(time_remaining as f32).powf(0.7) as usize
-	} else {20 * 1000};
+	let time_remaining = time_remaining.unwrap_or(20 * 1000);
+	let search_depth = match time_remaining {
+		x if x < 15 * 1000 => 4,
+		x if x < 60 * 1000 => 5,
+		_ => 6
+	};
 	
 	static mut OUTPUTS: [(f32, u8, u8, MoveType); 64] = [(-100000000.0, 0, 0, MoveType::Normal); 64];
 	thread_pool.scope(|s| {
 		#[allow(static_mut_refs)]
 		for (i, output) in unsafe {OUTPUTS.iter_mut().enumerate()} {
-			//let board = *board;
-			//let game_flags = *game_flags;
 			s.spawn(move |_s| {
-				*output = try_black_move(board, time_remaining, i as u8, game_flags, 6);
+				*output = try_black_move(board, time_remaining, i as u8, game_flags, search_depth);
 			});
 		}
 	});
@@ -107,13 +68,11 @@ fn try_black_move(board: Board, ending_millis: usize, index: u8, game_flags: u8,
 fn try_black_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha: f32, beta: f32, depth: u8) -> f32 {
 	let depth = depth - 1;
 	let mut score: f32 = -100000000.0; // searching for the best move for black
-	//let mut move_count = 0;
 	for x in 0..4 {
 		for y in 0..8 {
 			let x = x * 2;
 			let (piece1, piece2) = get_doubled_pieces(&board, x, y);
 			if piece1.is_black() {for (move_x, move_y, move_type) in get_black_moves(&board, piece1, x, y, game_flags) {
-				//move_count += 1;
 				let mut new_board = board;
 				let mut new_game_flags = game_flags;
 				perform_move(&mut new_board, &mut new_game_flags, piece1, x, y, move_x, move_y, move_type);
@@ -128,7 +87,6 @@ fn try_black_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha
 			}}
 			let x = x + 1;
 			if piece2.is_black() {for (move_x, move_y, move_type) in get_black_moves(&board, piece2, x, y, game_flags) {
-				//move_count += 1;
 				let mut new_board = board;
 				let mut new_game_flags = game_flags;
 				perform_move(&mut new_board, &mut new_game_flags, piece2, x, y, move_x, move_y, move_type);
@@ -143,20 +101,17 @@ fn try_black_moves(board: Board, ending_millis: usize, game_flags: u8, mut alpha
 			}}
 		}
 	}
-	//if move_count > 0 {score} else {0.0}
 	score
 }
 
 fn try_white_moves(board: Board, ending_millis: usize, game_flags: u8, alpha: f32, mut beta: f32, depth: u8) -> f32 {
 	let depth = depth - 1;
 	let mut score: f32 = 100000000.0; // searching for the best move for white
-	//let mut move_count = 0;
 	for x in 0..4 {
 		for y in 0..8 {
 			let x = x * 2;
 			let (piece1, piece2) = get_doubled_pieces(&board, x, y);
 			if piece1.is_white() {for (move_x, move_y, move_type) in get_white_moves(&board, piece1, x, y, game_flags) {
-				//move_count += 1;
 				let mut new_board = board;
 				let mut new_game_flags = game_flags;
 				perform_move(&mut new_board, &mut new_game_flags, piece1, x, y, move_x, move_y, move_type);
@@ -171,7 +126,6 @@ fn try_white_moves(board: Board, ending_millis: usize, game_flags: u8, alpha: f3
 			}}
 			let x = x + 1;
 			if piece2.is_white() {for (move_x, move_y, move_type) in get_white_moves(&board, piece2, x, y, game_flags) {
-				//move_count += 1;
 				let mut new_board = board;
 				let mut new_game_flags = game_flags;
 				perform_move(&mut new_board, &mut new_game_flags, piece2, x, y, move_x, move_y, move_type);
@@ -186,7 +140,6 @@ fn try_white_moves(board: Board, ending_millis: usize, game_flags: u8, alpha: f3
 			}}
 		}
 	}
-	//if move_count > 0 {score} else {0.0}
 	score
 }
 
@@ -517,11 +470,6 @@ pub fn get_board_score(board: &Board, black_moves_next: bool) -> f32 {
 		}
 	}
 	
-	//unsafe {
-	//	#[allow(static_mut_refs)]
-	//	COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-	//}
-	
 	if !black_has_king {
 		-1000000.0
 	} else if !white_has_king {
@@ -530,5 +478,3 @@ pub fn get_board_score(board: &Board, black_moves_next: bool) -> f32 {
 		black_score / white_score
 	}
 }
-
-//static mut COUNTER: AtomicUsize = AtomicUsize::new(0);
