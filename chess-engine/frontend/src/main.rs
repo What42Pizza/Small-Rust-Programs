@@ -17,11 +17,10 @@ pub use utils::*;
 
 
 pub use shared::*;
-use std::thread;
-pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, Duration, SystemTime}, sync::{LazyLock, Arc, Mutex}, fs::{self, File}, io::Read};
+pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, Duration, SystemTime}, sync::{LazyLock, Arc, Mutex}, fs::{self, File}, io::Read, thread};
 pub use sdl3::{render::{Canvas, FRect}, video::Window, event::Event, keyboard::Mod, render::{Texture, TextureCreator}, video::WindowContext, pixels::{Color, PixelFormat}, sys::pixels::SDL_PixelFormat, mouse::MouseState, EventPump};
 pub use image::{EncodableLayout, ImageReader};
-use rodio::{buffer::SamplesBuffer, Decoder, OutputStreamBuilder, Sink, Source, OutputStream};
+pub use rodio::{buffer::SamplesBuffer, Decoder, OutputStreamBuilder, Sink, Source, OutputStream};
 pub use rayon::ThreadPool;
 pub use anyhow::*;
 pub use easy_sdl3_text as sdl3_text;
@@ -106,7 +105,7 @@ fn main_result() -> Result<()> {
 		ring_selectors: None,
 		
 	};
-	update_window_elements(&mut data, &canvas, &event_pump)?;
+	update_window_elements(&mut data, &canvas)?;
 	
 	while !data.should_close {
 		
@@ -115,8 +114,8 @@ fn main_result() -> Result<()> {
 		for event in event_pump.poll_iter() { handle_event(&mut data, event)?; }
 		update(&mut data, &event_pump);
 		
-		update_window_elements(&mut data, &canvas, &event_pump)?;
-		draw(&mut data, &mut canvas, &texture_creator, &mut text_cache, &textures)?;
+		update_window_elements(&mut data, &canvas)?;
+		draw(&data, &mut canvas, &texture_creator, &mut text_cache, &textures)?;
 		
 	}
 	
@@ -134,15 +133,13 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 	data.last_update_time = new_update_time;
 	
 	// tick time remainings
-	if let State::Playing { time_remainings, time_per_move, turn } = &mut data.state {
-		if let Some((player_time, engine_time)) = time_remainings {
-			match turn {
-				TurnState::PlayersTurn (_) => *player_time = player_time.saturating_sub(dt),
-				TurnState::EnginesTurn => *engine_time = engine_time.saturating_sub(dt)
-			}
-			if player_time.is_zero() { data.state = State::GameEnded (GameEndedState::EngineWon); }
-			else if engine_time.is_zero() { data.state = State::GameEnded (GameEndedState::PlayerWon); }
+	if let State::Playing { time_remainings: Some((player_time, engine_time)), time_per_move: _, turn } = &mut data.state {
+		match turn {
+			TurnState::PlayersTurn (_) => *player_time = player_time.saturating_sub(dt),
+			TurnState::EnginesTurn => *engine_time = engine_time.saturating_sub(dt)
 		}
+		if player_time.is_zero() { data.state = State::GameEnded (GameEndedState::EngineWon); }
+		else if engine_time.is_zero() { data.state = State::GameEnded (GameEndedState::PlayerWon); }
 	}
 	
 	// if playing
@@ -216,7 +213,7 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 				}
 			}
 		}
-		if let TurnState::PlayersTurn (PlayersTurnState::HoldingPiece { x, y, piece }) = turn {
+		if let TurnState::PlayersTurn (PlayersTurnState::HoldingPiece { piece, .. }) = turn {
 			player_has_king |= *piece == Piece::WhiteKing;
 		}
 		if !player_has_king { data.state = State::GameEnded (GameEndedState::EngineWon); }
@@ -227,7 +224,7 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 
 
 
-pub fn update_window_elements(data: &mut AppData, canvas: &Canvas<Window>, event_pump: &EventPump) -> Result<()> {
+pub fn update_window_elements(data: &mut AppData, canvas: &Canvas<Window>) -> Result<()> {
 	
 	data.prev_mouse_state = data.mouse_state;
 	let window_size = canvas.output_size()?;
@@ -254,7 +251,7 @@ fn load_settings(settings_path: &Path) -> Result<AppSettings> {
 	let last_modified_time = meta.modified()?;
 	
 	let settings = std::fs::read_to_string(settings_path)?;
-	let (settings, did_update, errors) = ecf::File::from_str(settings, &[], &mut ());
+	let (settings, _did_update, errors) = ecf::File::from_str(settings, &[], &mut ());
 	for error in errors {
 		println!("Error while loading settings: {error}");
 	}

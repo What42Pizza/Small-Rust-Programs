@@ -22,7 +22,7 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 	sdl3_text::render_text_subpixel("New Game", new_game_pos.0 as i32, new_game_pos.1 as i32, &mut render_text_settings)?;
 	
 	// chess board
-	let mut board_rect = FRect::new(screen_mid.0 - height * 0.26, screen_mid.1 - height * 0.26, height * 0.52, height * 0.52);
+	let board_rect = FRect::new(screen_mid.0 - height * 0.26, screen_mid.1 - height * 0.26, height * 0.52, height * 0.52);
 	canvas.set_draw_color(data.settings.board_trim_color);
 	canvas.fill_rect(board_rect)?;
 	for x in 0..8 {
@@ -55,7 +55,7 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 		y += size as f32 * 1.1;
 	}
 	if let State::Playing { time_remainings: _, time_per_move: Some(time_per_move), turn: _ } = &data.state {
-		let size = size * 7 / 10;
+		render_text_settings.size *= 0.7;
 		sdl3_text::render_text_subpixel(format!("Time per move: {}", format_min_sec(*time_per_move)), x as i32, y as i32, &mut render_text_settings)?;
 	}
 	render_text_settings.v_align = sdl3_text::VAlign::Bottom;
@@ -74,7 +74,7 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 	}
 	
 	// held piece
-	if let State::Playing { turn: TurnState::PlayersTurn (PlayersTurnState::HoldingPiece { x, y, piece }), .. } = &data.state {
+	if let State::Playing { turn: TurnState::PlayersTurn (PlayersTurnState::HoldingPiece { piece, .. }), .. } = &data.state {
 		let slot_width = height / 16.0;
 		let texture = get_texture_for_piece(*piece, textures).expect("Cannot hold no Piece::None");
 		let dst = FRect::new(data.mouse_state.x() - slot_width * 0.5, data.mouse_state.y() - slot_width * 0.5, slot_width, slot_width);
