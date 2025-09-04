@@ -20,7 +20,7 @@ pub fn handle_event(data: &mut AppData, event: Event) -> Result<()> {
 			// new game button
 			if data.new_game_button_rect.contains((x, y)) {
 				data.new_game_button_down = true;
-				play_sound(&data, &data.ui_pop_audio);
+				play_sound(&mut data.audio_system, &data.ui_pop_audio);
 				new_game_button_pressed(data);
 				return Ok(());
 			}

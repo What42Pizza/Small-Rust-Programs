@@ -70,6 +70,8 @@ fn main_result() -> Result<()> {
 	let textures = load_textures(&resources_path, &texture_creator)?;
 	
 	let audio_stream = OutputStreamBuilder::open_default_stream()?;
+	let mut sinks = vec!();
+	for _ in 0..16 {sinks.push(Sink::connect_new(audio_stream.mixer()));}
 	let decoder = Decoder::new(File::open(resources_path.join("audio/ui pop.mp3"))?)?;
 	let ui_pop_audio = SamplesBuffer::new(decoder.channels(), decoder.sample_rate(), decoder.collect::<Vec<_>>());
 	
@@ -82,7 +84,11 @@ fn main_result() -> Result<()> {
 		last_update_time: Instant::now(),
 		
 		// audio
-		audio_stream,
+		audio_system: AudioSystem {
+			audio_stream,
+			sinks,
+			last_sink: 0,
+		},
 		ui_pop_audio,
 		
 		// window elements
@@ -161,7 +167,7 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 							let new_engine_move = engine::get_move(board, game_flags, time_remaining, &THREAD_POOL);
 							*engine_move.lock().unwrap() = Some(new_engine_move);
 						});
-						play_sound(&data, &data.ui_pop_audio);
+						play_sound(&mut data.audio_system, &data.ui_pop_audio);
 					} else {
 						set_piece(&mut data.board, from_x, from_y, piece);
 						*players_turn_state = PlayersTurnState::NotHoldingPiece;
@@ -186,7 +192,7 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 			if let (Some((_player_time, engine_time)), Some(time_per_move)) = (time_remainings, time_per_move) {
 				*engine_time += *time_per_move;
 			}
-			play_sound(&data, &data.ui_pop_audio);
+			play_sound(&mut data.audio_system, &data.ui_pop_audio);
 		}
 	}
 	
@@ -322,10 +328,8 @@ fn reload_settings_if_needed<'a>(data: &mut AppData, text_cache: &mut sdl3_text:
 	Ok(())
 }
 
-fn play_sound(data: &AppData, sound: &SamplesBuffer) {
-	let sink = Sink::connect_new(data.audio_stream.mixer());
-	sink.append(sound.clone());
-	rayon::spawn(move || {
-		while !sink.empty() {thread::sleep(Duration::SECOND);}
-	});
+fn play_sound(audio_system: &mut AudioSystem, sound: &SamplesBuffer) {
+	let sink_index = (audio_system.last_sink + 1) % audio_system.sinks.len() as u8;
+	audio_system.last_sink = sink_index;
+	audio_system.sinks[sink_index as usize].append(sound.clone());
 }

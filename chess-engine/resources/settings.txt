@@ -3,7 +3,7 @@ format 1
 
 # in seconds, leave as 0 to disable
 total time: 300
-time per move: 0
+time per move: 5
 
 
 # name of the font file, which must also be placed in the 'resources' folder

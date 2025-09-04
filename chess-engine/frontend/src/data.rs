@@ -13,7 +13,7 @@ pub struct AppData {
 	pub last_update_time: Instant,
 	
 	// audio
-	pub audio_stream: OutputStream,
+	pub audio_system: AudioSystem,
 	pub ui_pop_audio: SamplesBuffer,
 	
 	// window elements
@@ -62,6 +62,14 @@ pub enum GameEndedState {
 	PlayerWon,
 	EngineWon,
 	NeitherWon,
+}
+
+
+
+pub struct AudioSystem {
+	pub audio_stream: OutputStream,
+	pub sinks: Vec<Sink>,
+	pub last_sink: u8,
 }
 
 
