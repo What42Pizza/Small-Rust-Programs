@@ -12,6 +12,10 @@ pub struct AppData {
 	pub should_close: bool,
 	pub last_update_time: Instant,
 	
+	// audio
+	pub audio_stream: OutputStream,
+	pub ui_pop_audio: SamplesBuffer,
+	
 	// window elements
 	pub window_size: (f32, f32),
 	pub mouse_state: MouseState,

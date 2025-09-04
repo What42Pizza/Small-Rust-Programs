@@ -12,16 +12,16 @@ pub use draw::*;
 pub mod data;
 pub use data::*;
 pub mod utils;
-use sdl3::EventPump;
 pub use utils::*;
 
 
 
 pub use shared::*;
-use std::fs;
-pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, Duration, SystemTime}, sync::{LazyLock, Arc, Mutex}};
-pub use sdl3::{render::{Canvas, FRect}, video::Window, event::Event, keyboard::Mod, render::{Texture, TextureCreator}, video::WindowContext, pixels::{Color, PixelFormat}, sys::pixels::SDL_PixelFormat, mouse::MouseState};
-use image::{EncodableLayout, ImageReader};
+use std::thread;
+pub use std::{collections::HashMap, result::Result::{self as StdResult, Ok as StdOk, Err as StdErr}, path::{Path, PathBuf}, time::{Instant, Duration, SystemTime}, sync::{LazyLock, Arc, Mutex}, fs::{self, File}, io::Read};
+pub use sdl3::{render::{Canvas, FRect}, video::Window, event::Event, keyboard::Mod, render::{Texture, TextureCreator}, video::WindowContext, pixels::{Color, PixelFormat}, sys::pixels::SDL_PixelFormat, mouse::MouseState, EventPump};
+pub use image::{EncodableLayout, ImageReader};
+use rodio::{buffer::SamplesBuffer, Decoder, OutputStreamBuilder, Sink, Source, OutputStream};
 pub use rayon::ThreadPool;
 pub use anyhow::*;
 pub use easy_sdl3_text as sdl3_text;
@@ -69,6 +69,10 @@ fn main_result() -> Result<()> {
 	let mut text_cache = sdl3_text::TextCache::new(font);
 	let textures = load_textures(&resources_path, &texture_creator)?;
 	
+	let audio_stream = OutputStreamBuilder::open_default_stream()?;
+	let decoder = Decoder::new(File::open(resources_path.join("audio/ui pop.mp3"))?)?;
+	let ui_pop_audio = SamplesBuffer::new(decoder.channels(), decoder.sample_rate(), decoder.collect::<Vec<_>>());
+	
 	let mut data = AppData {
 		
 		// basics
@@ -76,6 +80,10 @@ fn main_result() -> Result<()> {
 		resources_path,
 		should_close: false,
 		last_update_time: Instant::now(),
+		
+		// audio
+		audio_stream,
+		ui_pop_audio,
 		
 		// window elements
 		window_size: (0.0, 0.0),
@@ -153,6 +161,7 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 							let new_engine_move = engine::get_move(board, game_flags, time_remaining, &THREAD_POOL);
 							*engine_move.lock().unwrap() = Some(new_engine_move);
 						});
+						play_sound(&data, &data.ui_pop_audio);
 					} else {
 						set_piece(&mut data.board, from_x, from_y, piece);
 						*players_turn_state = PlayersTurnState::NotHoldingPiece;
@@ -177,6 +186,7 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 			if let (Some((_player_time, engine_time)), Some(time_per_move)) = (time_remainings, time_per_move) {
 				*engine_time += *time_per_move;
 			}
+			play_sound(&data, &data.ui_pop_audio);
 		}
 	}
 	
@@ -310,4 +320,12 @@ fn reload_settings_if_needed<'a>(data: &mut AppData, text_cache: &mut sdl3_text:
 	text_cache.switch_font(new_font);
 	
 	Ok(())
+}
+
+fn play_sound(data: &AppData, sound: &SamplesBuffer) {
+	let sink = Sink::connect_new(data.audio_stream.mixer());
+	sink.append(sound.clone());
+	rayon::spawn(move || {
+		while !sink.empty() {thread::sleep(Duration::SECOND);}
+	});
 }

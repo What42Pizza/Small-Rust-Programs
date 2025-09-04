@@ -1,0 +1,5 @@
+chess pieces images were taken from: https://greenchess.net/info.php?item=downloads
+licensed under: https://creativecommons.org/licenses/by-sa/3.0/deed.en
+
+ui pop sound effect was taken from: https://pixabay.com/sound-effects/pop-tap-click-fx-383733/
+licensed under: https://pixabay.com/service/license-summary/

@@ -3,11 +3,11 @@ format 1
 
 # in seconds, leave as 0 to disable
 total time: 300
-time per move: 5
+time per move: 0
 
 
 # name of the font file, which must also be placed in the 'resources' folder
-font: "Inter_24pt-Regular.ttf"
+font: "font/Inter_24pt-Regular.ttf"
 
 
 background color red:   249
