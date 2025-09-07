@@ -8,8 +8,6 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 	let (width, height) = (data.window_size.0, data.window_size.1);
 	let screen_mid = (width * 0.5, height * 0.5);
 	
-	//sdl3_text::render_text_subpixel("This is a lot of text! I have 1, 2, and 3? this... is (1 - 3) - thing[4]", 30, 50, 150, Color::RGB(30, 30, 30), Color::RGB(246, 223, 178), canvas, texture_creator, text_cache)?;
-	
 	// top bar
 	canvas.set_draw_color(data.settings.top_bar_color);
 	canvas.fill_rect(get_top_bar_rect(width, height))?;
