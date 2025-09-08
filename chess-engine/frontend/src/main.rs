@@ -72,7 +72,7 @@ fn main_result() -> Result<()> {
 	let mut sinks = vec!();
 	for _ in 0..16 {sinks.push(Sink::connect_new(audio_stream.mixer()));}
 	let decoder = Decoder::new(File::open(resources_path.join("audio/ui pop.mp3"))?)?;
-	let ui_pop_audio = SamplesBuffer::new(decoder.channels(), decoder.sample_rate(), decoder.collect::<Vec<_>>());
+	let ui_pop_audio = SamplesBuffer::new(decoder.channels(), decoder.sample_rate(), decoder.map(|v| v * 0.5).collect::<Vec<_>>());
 	
 	let mut data = AppData {
 		
@@ -103,6 +103,7 @@ fn main_result() -> Result<()> {
 		state: State::NotPlaying,
 		engine_move: Arc::new(Mutex::new(None)),
 		ring_selectors: None,
+		check_indicators: None,
 		
 	};
 	update_window_elements(&mut data, &canvas)?;
@@ -160,6 +161,7 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 						let (board, game_flags, time_remaining) = (data.board, data.game_flags, time_remainings.map(|(_, v)| v.as_millis() as usize));
 						let engine_move = data.engine_move.clone();
 						data.ring_selectors = Some((from_x, from_y, to_x, to_y));
+						data.check_indicators = None;
 						rayon::spawn(move || {
 							let new_engine_move = engine::get_move(board, game_flags, time_remaining, &THREAD_POOL);
 							*engine_move.lock().unwrap() = Some(new_engine_move);
@@ -185,10 +187,11 @@ pub fn update(data: &mut AppData, event_pump: &EventPump) {
 			perform_move(&mut data.board, &mut data.game_flags, piece, from_x, from_y, to_x, to_y, move_type);
 			*engine_move = None;
 			*turn = TurnState::PlayersTurn (PlayersTurnState::NotHoldingPiece);
-			data.ring_selectors = Some((from_x, from_y, to_x, to_y));
 			if let (Some((_player_time, engine_time)), Some(time_per_move)) = (time_remainings, time_per_move) {
 				*engine_time += *time_per_move;
 			}
+			data.ring_selectors = Some((from_x, from_y, to_x, to_y));
+			data.check_indicators =get_check_indicators(data);
 			play_sound(&mut data.audio_system, &data.ui_pop_audio);
 		}
 	}
@@ -287,6 +290,36 @@ fn load_settings(settings_path: &Path) -> Result<AppSettings> {
 		board_trim_color,
 		
 	})
+}
+
+
+
+pub fn get_check_indicators(data: &AppData) -> Option<(u8, u8, u8, u8)> {
+	let mut king_pos = None;
+	for x in 0..4 {
+		for y in 0..8 {
+			let x = x * 2;
+			let (piece1, piece2) = get_doubled_pieces(&data.board, x, y);
+			if piece1 == Piece::WhiteKing { king_pos = Some((x, y)); break; }
+			let x = x + 1;
+			if piece2 == Piece::WhiteKing { king_pos = Some((x, y)); break; }
+		}
+	}
+	let Some(king_pos) = king_pos else {return None;};
+	for x in 0..4 {
+		for y in 0..8 {
+			let x = x * 2;
+			let (piece1, piece2) = get_doubled_pieces(&data.board, x, y);
+			for (to_x, to_y, _) in get_black_moves(&data.board, piece1, x, y, data.game_flags) {
+				if (to_x, to_y) == king_pos {return Some((king_pos.0, king_pos.1, x, y));}
+			}
+			let x = x + 1;
+			for (to_x, to_y, _) in get_black_moves(&data.board, piece2, x, y, data.game_flags) {
+				if (to_x, to_y) == king_pos {return Some((king_pos.0, king_pos.1, x, y));}
+			}
+		}
+	}
+	None
 }
 
 

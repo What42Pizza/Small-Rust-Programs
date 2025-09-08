@@ -29,6 +29,7 @@ pub struct AppData {
 	pub state: State,
 	pub engine_move: Arc<Mutex<Option<(u8, u8, u8, u8, MoveType)>>>,
 	pub ring_selectors: Option<(u8, u8, u8, u8)>,
+	pub check_indicators: Option<(u8, u8, u8, u8)>,
 	
 }
 
@@ -75,7 +76,8 @@ pub struct AudioSystem {
 
 
 pub struct Textures<'a> {
-	pub ring: Texture<'a>,
+	pub gray_ring: Texture<'a>,
+	pub red_ring: Texture<'a>,
 	pub black_pawn: Texture<'a>,
 	pub black_knight: Texture<'a>,
 	pub black_bishop: Texture<'a>,

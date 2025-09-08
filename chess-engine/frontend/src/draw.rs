@@ -37,8 +37,14 @@ pub fn draw<'a, Font: sdl3_text::ThreadSafeFont>(data: &AppData, canvas: &mut Ca
 	if let Some((x1, y1, x2, y2)) = data.ring_selectors {
 		let pos1 = get_slot_screen_rect(x1, y1, data.window_size);
 		let pos2 = get_slot_screen_rect(x2, y2, data.window_size);
-		canvas.copy(&textures.ring, None, pos1)?;
-		canvas.copy(&textures.ring, None, pos2)?;
+		canvas.copy(&textures.gray_ring, None, pos1)?;
+		canvas.copy(&textures.gray_ring, None, pos2)?;
+	}
+	if let Some((x1, y1, x2, y2)) = data.check_indicators {
+		let pos1 = get_slot_screen_rect(x1, y1, data.window_size);
+		let pos2 = get_slot_screen_rect(x2, y2, data.window_size);
+		canvas.copy(&textures.red_ring, None, pos1)?;
+		canvas.copy(&textures.red_ring, None, pos2)?;
 	}
 	
 	// game data text
@@ -114,7 +120,8 @@ fn get_texture_for_piece<'a, 'b>(piece: Piece, textures: &'b Textures<'a>) -> Op
 pub fn load_textures<'a>(resources_path: &Path, texture_creator: &'a TextureCreator<WindowContext>) -> Result<Textures<'a>> {
 	let textures_path = resources_path.join("textures");
 	Ok(Textures {
-		ring: load_image_from_path(textures_path.join("ring.png"), texture_creator)?,
+		gray_ring: load_image_from_path(textures_path.join("gray ring.png"), texture_creator)?,
+		red_ring: load_image_from_path(textures_path.join("red ring.png"), texture_creator)?,
 		black_pawn: load_image_from_path(textures_path.join("black-pawn.png"), texture_creator)?,
 		black_knight: load_image_from_path(textures_path.join("black-knight.png"), texture_creator)?,
 		black_bishop: load_image_from_path(textures_path.join("black-bishop.png"), texture_creator)?,
