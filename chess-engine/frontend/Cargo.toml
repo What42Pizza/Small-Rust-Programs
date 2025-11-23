@@ -8,8 +8,8 @@ default-run = "frontend"
 shared = { path = "../shared" }
 engine = { path = "../engine" }
 anyhow = "1.0.99"
-sdl3 = { version = "0.14.36", features = ["build-from-source"] }
-easy-sdl3-text = { git = "https://github.com/What42Pizza/easy-sdl3-text.git" }
+sdl3 = { version = "0.16.2", features = ["build-from-source"] }
+easy-sdl3-text = "0.3.3"
 ab_glyph = "0.2.31"
 image = "0.25.6"
 rodio = "0.21.1"

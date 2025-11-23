@@ -214,6 +214,12 @@ pub fn perform_move(board: &mut Board, game_flags: &mut u8, piece: Piece, from_x
 	if piece as u8 & 0b111 == Piece::BlackPawn as u8 && to_y.abs_diff(from_y) == 2 {
 		*game_flags |= (to_x << 5) | 0b00010000; // allow en passant for next move
 	}
+	if piece == Piece::WhiteKing {
+		*game_flags &= 0b11111100;
+	}
+	if piece == Piece::BlackKing {
+		*game_flags &= 0b11110011;
+	}
 	match (from_x, from_y) {
 		(0, 0) => *game_flags &= 0b11111110,
 		(0, 7) => *game_flags &= 0b11111101,

@@ -13,12 +13,17 @@
 
 pub mod settings {
 	
-	pub const POINT_COUNT: usize = 5;
+	// 6
+	// 10
+	// 16
+	// 24
+	// 34
+	pub const POINT_COUNT: usize = 34;
 	pub const COMPUTE_RESOLUTION: usize = 512;
 	pub const AVERAGE_MOVEMENT_EXIT_THRESHOLD: f32 = 0.0001;
 	pub const MAX_ITERATIONS: usize = 100;
 	
-	pub const EVEN_LENGTHS_LERP: f32 = 0.2; // pulls the points towards lengths from center that are evenly spaced
+	pub const EVEN_LENGTHS_LERP: f32 = 0.2; // how much to pull the points towards whatever length from the center makes them evenly spaced
 	
 	pub fn point_is_in_shape(x: f32, y: f32) -> bool {
 		(x * x + y * y).sqrt() < 1.0
