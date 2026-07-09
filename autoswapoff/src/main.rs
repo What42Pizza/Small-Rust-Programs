@@ -21,9 +21,10 @@ fn main() -> Result<()> {
 	let mut seconds_per_run: u64 = 30;
 	let mut min_swap_usage_mb: u64 = 1024;
 	let mut excess_ram_needed_mb: u64 = 1024;
-	let mut run_type = RunType::Default;
+	let mut run_type = RunType::Looped;
 	enum RunType {
-		Default,
+		Looped,
+		Once,
 		Help,
 	}
 	
@@ -42,16 +43,26 @@ fn main() -> Result<()> {
 			"--seconds-per-run"   => { seconds_per_run = get_arg_u64(&mut args, "--seconds-per-run")?  ; }
 			"--min-swap-usage"    => { min_swap_usage_mb = get_arg_u64(&mut args, "--min-swap-usage")?   ; }
 			"--excess-ram-needed" => { excess_ram_needed_mb = get_arg_u64(&mut args, "--excess-ram-needed")?; }
+			"--once" => run_type = RunType::Once,
 			"--help" | "-h" => run_type = RunType::Help,
 			
 			_ => eprintln!("Warning: unknown argument '{arg}'"),
 		}
 	}
 	
+	let (min_swap_usage, excess_ram_needed) = (min_swap_usage_mb * 1024 * 1024, excess_ram_needed_mb * 1024 * 1024);
 	match run_type {
-		RunType::Default => {
+		RunType::Looped => {
 			
-			run_loop(seconds_per_run, min_swap_usage_mb, excess_ram_needed_mb);
+			run_loop(seconds_per_run, min_swap_usage, excess_ram_needed);
+			
+		}
+		RunType::Once => {
+			
+			let result = do_check_and_operation(min_swap_usage, excess_ram_needed);
+			if let Err(err) = result {
+				eprintln!("Warning: encountered error while performing operation: {err}");
+			}
 			
 		}
 		RunType::Help => {
@@ -60,6 +71,7 @@ fn main() -> Result<()> {
 			println!("    --seconds-per-run <SECS>            Specifies how frequently this should do its operation. Defaults to 30.");
 			println!("    --min-swap-usage <AMOUNT_MB>        This will not run swapoff/swapon unless there is at least this much in swap. Default to 1024.");
 			println!("    --excess-ram-needed <AMOUNT_MB>     This will not run swapoff/swapon unless the amount of free ram is enough to hold all the stored data in swap plus this amount. Defaults to 1024.");
+			println!("    --once                              Runs the check and operations only once instead of looping.");
 			println!("    --help | -h                         Prints this help screen.");
 			
 		}
@@ -70,8 +82,7 @@ fn main() -> Result<()> {
 
 
 
-pub fn run_loop(seconds_per_run: u64, min_swap_usage_mb: u64, excess_ram_needed_mb: u64) -> ! {
-	let (min_swap_usage, excess_ram_needed) = (min_swap_usage_mb * 1024 * 1024, excess_ram_needed_mb * 1024 * 1024);
+pub fn run_loop(seconds_per_run: u64, min_swap_usage: u64, excess_ram_needed: u64) -> ! {
 	println!("Running autoswapoff");
 	loop {
 		
@@ -89,9 +100,22 @@ pub fn run_loop(seconds_per_run: u64, min_swap_usage_mb: u64, excess_ram_needed_
 
 pub fn do_check_and_operation(min_swap_usage: u64, excess_ram_needed: u64) -> Result<()> {
 	
+	let (swap_used, mem_avail) = get_swap_and_avail_mem()?;
+	if !(swap_used > min_swap_usage && mem_avail > swap_used + excess_ram_needed) { return Ok(()); }
+	
+	println!("Detected unideal swap usage (swap used: {swap_used}, ram available: {mem_avail}), detecting swap devices...");
+	do_swap_off_on()?;
+	println!("Done");
+	
+	Ok(())
+}
+
+
+
+pub fn get_swap_and_avail_mem() -> Result<(u64, u64)> {
+	
 	let meminfo = fs_read_to_string("/proc/meminfo")?;
 	
-	// pick out lines
 	let mut mem_avail_line = None;
 	let mut swap_total_line = None;
 	let mut swap_free_line = None;
@@ -101,7 +125,6 @@ pub fn do_check_and_operation(min_swap_usage: u64, excess_ram_needed: u64) -> Re
 		if meminfo_line.starts_with("SwapFree"    ) { swap_free_line  = Some(meminfo_line); }
 	}
 	
-	// extract data from lines
 	fn extract_amount(line: Option<&str>, name: &str) -> Result<u64> {
 		let Some(line) = line else { bail!("Failed to find line \"{}\" in \"/proc/meminfo\"", name); };
 		let Some(amount_str) = line.split_whitespace().nth(1) else { bail!("Failed to find amount within line \"{}\"", line); };
@@ -112,23 +135,45 @@ pub fn do_check_and_operation(min_swap_usage: u64, excess_ram_needed: u64) -> Re
 	let swap_free  = extract_amount(swap_free_line , "SwapFree"    )? * 1024;
 	let swap_used = swap_total - swap_free;
 	
-	// check if should swap off
-	if !(swap_used > min_swap_usage && mem_avail > swap_used + excess_ram_needed) { return Ok(()); }
+	Ok((swap_used, mem_avail))
+}
+
+
+
+pub fn do_swap_off_on() -> Result<()> {
 	
-	// do swap off/on
-	println!("Detected unideal swap usage, running swapoff...");
-	Command::new("swapoff")
-		.arg("-a")
-		.status()?
-		.exit_ok()
-		.context("Failed to run command \"swapoff -a\"")?;
-	println!("Running swapon...");
-	Command::new("swapon")
-		.arg("-a")
-		.status()?
-		.exit_ok()
-		.context("Failed to run command \"swapon -a\"")?;
-	println!("Done");
+	let swaps = fs_read_to_string("/proc/swaps")?;
+	let swap_devices =
+		swaps
+		.lines()
+		.skip(1)
+		.filter_map(|line| {
+			line.split_whitespace().next()
+		})
+		.collect::<Vec<_>>();
+	if swap_devices.is_empty() {
+		eprintln!("Warning: no swap devices were detected! Output read from \"/proc/swaps\":\n```\n{swaps}\n```");
+	}
+	
+	// do swap off
+	for device in &swap_devices {
+		println!("Running `swapoff {device}`...");
+		Command::new("swapoff")
+			.arg(device)
+			.status()?
+			.exit_ok()
+			.with_context(|| format!("Failed to run command `swapoff {device}`"))?;
+	}
+	
+	// do swap on
+	for device in &swap_devices {
+		println!("Running `swapon {device}`...");
+		Command::new("swapon")
+			.arg(device)
+			.status()?
+			.exit_ok()
+			.with_context(|| format!("Failed to run command `swapon {device}`"))?;
+	}
 	
 	Ok(())
 }
