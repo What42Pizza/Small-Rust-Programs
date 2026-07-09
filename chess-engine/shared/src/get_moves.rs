@@ -329,10 +329,11 @@ pub fn get_black_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let y_min = y.max(1) - 1;
 				let x_max = x.min(6) + 1;
 				let y_max = y.min(6) + 1;
-				for x in x_min..=x_max {
-					for y in y_min..=y_max {
-						if !get_piece(board, x, y).is_black() {
-							yield (x, y, MoveType::Normal);
+				for move_x in x_min..=x_max {
+					for move_y in y_min..=y_max {
+						if move_x == x && move_y == y {continue;}
+						if !get_piece(board, move_x, move_y).is_white() {
+							yield (move_x, move_y, MoveType::Normal);
 						}
 					}
 				}
@@ -665,10 +666,11 @@ pub fn get_white_moves(board: &Board, piece: Piece, x: u8, y: u8, game_flags: u8
 				let y_min = y.max(1) - 1;
 				let x_max = x.min(6) + 1;
 				let y_max = y.min(6) + 1;
-				for x in x_min..=x_max {
-					for y in y_min..=y_max {
-						if !get_piece(board, x, y).is_white() {
-							yield (x, y, MoveType::Normal);
+				for move_x in x_min..=x_max {
+					for move_y in y_min..=y_max {
+						if move_x == x && move_y == y {continue;}
+						if !get_piece(board, move_x, move_y).is_white() {
+							yield (move_x, move_y, MoveType::Normal);
 						}
 					}
 				}
