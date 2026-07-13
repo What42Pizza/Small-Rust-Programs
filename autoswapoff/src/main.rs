@@ -5,8 +5,7 @@
 
 
 
-use std::time::Duration;
-pub use std::{path::Path, process::Command};
+pub use std::{path::Path, process::Command, str::FromStr, time::Duration, thread, time::Instant};
 pub use anyhow::*;
 
 
@@ -16,63 +15,87 @@ pub use utils::*;
 
 
 
+pub struct ProgramSettings {
+	run_type: RunType,
+	seconds_per_run: u64,
+	swap_usage_needed: u64,
+	stability_check_min_duration: u64,
+	stability_check_max_duration: u64,
+	stability_check_interval: u64,
+	stability_check_look_ahead: u64,
+	excess_ram_needed: u64,
+}
+
+impl Default for ProgramSettings {
+	fn default() -> Self {
+		Self {
+			run_type: RunType::Looped,
+			seconds_per_run: 30,
+			swap_usage_needed: 1024 * 1024 * 1024,
+			stability_check_min_duration: 10,
+			stability_check_max_duration: 30,
+			stability_check_interval: 200,
+			stability_check_look_ahead: 15,
+			excess_ram_needed: 1024 * 1024 * 1024,
+		}
+	}
+}
+
+pub enum RunType {
+	Looped,
+	Once,
+	Help,
+}
+
 fn main() -> Result<()> {
 	
-	let mut seconds_per_run: u64 = 30;
-	let mut min_swap_usage_mb: u64 = 1024;
-	let mut excess_ram_needed_mb: u64 = 1024;
-	let mut run_type = RunType::Looped;
-	enum RunType {
-		Looped,
-		Once,
-		Help,
-	}
+	let mut settings = ProgramSettings::default();
 	
-	fn get_arg_u64(args: &mut impl Iterator<Item = String>, arg_name: &str) -> Result<u64> {
-		args.next()
-			.ok_or_else(|| anyhow!("unexpected end of command arguments"))?
-			.parse()
-			.with_context(|| anyhow!("failed to parse '{}' argument", arg_name))
-	}
-	let mut args = std::env::args();
-	let mut args = args.skip(1);
+	let mut args = std::env::args().skip(1);
 	loop {
 		let Some(arg) = args.next() else { break; };
 		match &*arg {
-			
-			"--seconds-per-run"   => { seconds_per_run = get_arg_u64(&mut args, "--seconds-per-run")?  ; }
-			"--min-swap-usage"    => { min_swap_usage_mb = get_arg_u64(&mut args, "--min-swap-usage")?   ; }
-			"--excess-ram-needed" => { excess_ram_needed_mb = get_arg_u64(&mut args, "--excess-ram-needed")?; }
-			"--once" => run_type = RunType::Once,
-			"--help" | "-h" => run_type = RunType::Help,
-			
+			"--once"                      => settings.run_type = RunType::Once,
+			"--help" | "-h"               => settings.run_type = RunType::Help,
+			"--seconds-per-run"              => { settings.seconds_per_run              = take_arg::<u64>(&mut args, "--seconds-per-run")?; }
+			"--swap-usage-needed"            => { settings.swap_usage_needed            = take_arg::<u64>(&mut args, "--swap-usage-needed")? * 1024 * 1024; }
+			"--stability-check-min-duration" => { settings.stability_check_min_duration = take_arg::<u64>(&mut args, "--stability-check-min-duration")?; }
+			"--stability-check-max-duration" => { settings.stability_check_max_duration = take_arg::<u64>(&mut args, "--stability-check-max-duration")?; }
+			"--stability-check-interval"     => { settings.stability_check_interval     = take_arg::<u64>(&mut args, "--stability-check-interval")?; }
+			"--stability-check-look-ahead"   => { settings.stability_check_look_ahead   = take_arg::<u64>(&mut args, "--stability-check-look-ahead")?; }
+			"--excess-ram-needed"            => { settings.excess_ram_needed            = take_arg::<u64>(&mut args, "--excess-ram-needed")? * 1024 * 1024; }
 			_ => eprintln!("Warning: unknown argument '{arg}'"),
 		}
 	}
 	
-	let (min_swap_usage, excess_ram_needed) = (min_swap_usage_mb * 1024 * 1024, excess_ram_needed_mb * 1024 * 1024);
-	match run_type {
+	match settings.run_type {
 		RunType::Looped => {
 			
-			run_loop(seconds_per_run, min_swap_usage, excess_ram_needed);
+			println!("Running autoswapoff in loop");
+			run_loop(&settings);
 			
 		}
 		RunType::Once => {
 			
-			let result = do_check_and_operation(min_swap_usage, excess_ram_needed);
+			println!("Running autoswapoff once");
+			let result = run_once(&settings);
 			if let Err(err) = result {
-				eprintln!("Warning: encountered error while performing operation: {err}");
+				eprintln!("Error encountered while performing operation: {err}");
 			}
 			
 		}
 		RunType::Help => {
 			
 			println!("Arguments:");
-			println!("    --seconds-per-run <SECS>            Specifies how frequently this should do its operation. Defaults to 30.");
-			println!("    --min-swap-usage <AMOUNT_MB>        This will not run swapoff/swapon unless there is at least this much in swap. Default to 1024.");
-			println!("    --excess-ram-needed <AMOUNT_MB>     This will not run swapoff/swapon unless the amount of free ram is enough to hold all the stored data in swap plus this amount. Defaults to 1024.");
-			println!("    --once                              Runs the check and operations only once instead of looping.");
-			println!("    --help | -h                         Prints this help screen.");
+			println!("    --once                                      Runs the check and operations only once instead of looping.");
+			println!("    --help | -h                                 Prints this help screen.");
+			println!("    --seconds-per-run <SECS>                    Sets how frequently this should check the current swap usage. Unit is seconds, default is 30.");
+			println!("    --swap-usage-needed <AMOUNT_MB>             This will not run swapoff/swapon unless the swap usage exceeds this amount. Unit is megabytes, default is 1024.");
+			println!("    --stability-check-min-duration <DUR_SEC>    Once the 'swap usage' check passes, it starts tracking the ram usage for at least this long to make sure it isn't still being filled up. Unit is seconds, default is 10.");
+			println!("    --stability-check-max-duration <DUR_SEC>    If the stability check lasts longer than this then the operation is aborted and the program will wait 3x this duration before doing another 'swap usage' check. Unit is seconds, default is 30.");
+			println!("    --stability-check-interval <DUR_MS>         Sets how frequently the ram usage is checked during the stability check. Unit is milliseconds, default is 200.");
+			println!("    --stability-check-look-ahead <DUR_SEC>      As the ram usage is tracked, an estimate is made for how full the ram will likely be several seconds later (by simply fitting a line to the tracked data), this sets how far ahead it estimates. Unit is seconds, default is 15.");
+			println!("    --excess-ram-needed <AMOUNT_MB>             This will not run swapoff/swapon unless the available ram exceeds the amount of data currently stored in swap by at least this amount. This applies for both the current ram usage and predicted ram usage. Unit is megabytes, default is 1024.");
 			
 		}
 	}
@@ -82,37 +105,93 @@ fn main() -> Result<()> {
 
 
 
-pub fn run_loop(seconds_per_run: u64, min_swap_usage: u64, excess_ram_needed: u64) -> ! {
-	println!("Running autoswapoff");
+pub fn run_loop(settings: &ProgramSettings) -> ! {
 	loop {
 		
-		let result = do_check_and_operation(min_swap_usage, excess_ram_needed);
-		if let Err(err) = result {
-			eprintln!("Warning: encountered error while performing operation: {err}");
+		match run_once(settings) {
+			Result::Ok(stabilization_period_exceeded) => {
+				if stabilization_period_exceeded {
+					thread::sleep(Duration::from_secs(settings.stability_check_max_duration * 3 - settings.seconds_per_run));
+				}
+			}
+			Result::Err(err) => {
+				eprintln!("Error encountered while performing operation: {err}");
+			}
 		}
 		
-		std::thread::sleep(Duration::from_secs(seconds_per_run));
+		thread::sleep(Duration::from_secs(settings.seconds_per_run));
 		
 	}
 }
 
 
 
-pub fn do_check_and_operation(min_swap_usage: u64, excess_ram_needed: u64) -> Result<()> {
+pub type StabilizationPeriodExceeded = bool;
+
+pub fn run_once(settings: &ProgramSettings) -> Result<StabilizationPeriodExceeded> {
 	
-	let (swap_used, mem_avail) = get_swap_and_avail_mem()?;
-	if !(swap_used > min_swap_usage && mem_avail > swap_used + excess_ram_needed) { return Ok(()); }
+	let (swap_used, mem_avail) = get_swap_used_and_mem_avail()?;
+	if swap_used < settings.swap_usage_needed { return Ok(false); }
+	println!("Detected significant swap usage (current swap used: {swap_used}), starting ram usage tracking...");
 	
-	println!("Detected unideal swap usage (swap used: {swap_used}, ram available: {mem_avail}), detecting swap devices...");
-	do_swap_off_on()?;
-	println!("Done");
+	let mut mem_avail_list = vec!();
+	mem_avail_list.push(mem_avail);
+	let tracking_start_time = Instant::now();
+	let sleep_dur = Duration::from_millis(settings.stability_check_interval);
+	let min_tracking_dur = Duration::from_secs(settings.stability_check_min_duration);
+	let max_tracking_dur = Duration::from_secs(settings.stability_check_max_duration);
+	let look_ahead_count = settings.stability_check_look_ahead as f64 * 1000.0 / settings.stability_check_interval as f64;
 	
-	Ok(())
+	loop {
+		thread::sleep(sleep_dur);
+		let (swap_used, mem_avail) = get_swap_used_and_mem_avail()?;
+		mem_avail_list.push(mem_avail);
+		let elapsed = tracking_start_time.elapsed();
+		if elapsed >= min_tracking_dur {
+			let (m, b) = fit_line(&mem_avail_list); // notice that mem_avail_list has had at least 2 push() calls before this
+			let predicted_mem_avail = m * (mem_avail_list.len() as f64 + look_ahead_count) + b;
+			if mem_avail > swap_used + settings.excess_ram_needed && predicted_mem_avail > (swap_used + settings.excess_ram_needed) as f64 {
+				println!("Detected that ram usage has stabilized, running swapoff/swapon...");
+				do_swap_off_on()?;
+				println!("Done");
+				return Ok(false);
+			}
+			if elapsed > max_tracking_dur {
+				println!("Ram usage has not stabilized within allowed time frame, aborting");
+				return Ok(true);
+			}
+		}
+	}
 }
 
 
 
-pub fn get_swap_and_avail_mem() -> Result<(u64, u64)> {
+pub fn fit_line(samples: &[u64]) -> (f64, f64) {
+	debug_assert!(samples.len() >= 2);
+	let n = samples.len() as f64;
+	
+	let mut sum_y = 0.0;
+	let mut sum_xy = 0.0;
+	
+	for (x, &y) in samples.iter().enumerate() {
+		let (x, y) = (x as f64, y as f64);
+		sum_y += y;
+		sum_xy += x * y;
+	}
+	
+	let sum_x = n * (n - 1.0) * 0.5;
+	let sum_xx = n * (n - 1.0) * (2.0 * n - 1.0) / 6.0;
+	
+	let denom = n * sum_xx - sum_x * sum_x;
+	
+	let m = (n * sum_xy - sum_x * sum_y) / denom;
+	let b = (sum_y - m * sum_x) / n;
+	(m, b)
+}
+
+
+
+pub fn get_swap_used_and_mem_avail() -> Result<(u64, u64)> {
 	
 	let meminfo = fs_read_to_string("/proc/meminfo")?;
 	
