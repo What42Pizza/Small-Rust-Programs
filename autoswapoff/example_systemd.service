@@ -1,0 +1,13 @@
+[Unit]
+Description=Swap cleanup daemon
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/autoswapoff
+Restart=on-failure
+RestartSec=60
+User=root
+
+[Install]
+WantedBy=multi-user.target

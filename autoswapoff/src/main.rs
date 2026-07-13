@@ -148,7 +148,7 @@ pub fn run_once(settings: &ProgramSettings) -> Result<StabilizationPeriodExceede
 			let (m, b) = fit_line(&mem_avail_list); // notice that mem_avail_list has had at least 2 push() calls before this
 			let predicted_mem_avail = m * (mem_avail_list.len() as f64 + look_ahead_count) + b;
 			if mem_avail > swap_used + settings.excess_ram_needed && predicted_mem_avail > (swap_used + settings.excess_ram_needed) as f64 {
-				println!("Detected that ram usage has stabilized, running swapoff/swapon...");
+				println!("Detected that ram usage has stabilized (current available ram is {} MB, predicted available ram is {} MB, current swap usage is {} MB), running swapoff/swapon...", mem_avail / (1024 * 1024), (predicted_mem_avail / (1024.0 * 1024.0)) as u64, swap_used / (1024 * 1024));
 				do_swap_off_on()?;
 				println!("Done");
 				return Ok(false);
@@ -231,7 +231,6 @@ pub fn do_swap_off_on() -> Result<()> {
 		eprintln!("Warning: no swap devices were detected! Output read from \"/proc/swaps\":\n```\n{swaps}\n```");
 	}
 	
-	// do swap off
 	for device in &swap_devices {
 		println!("Running `swapoff {device}`...");
 		Command::new("swapoff")
@@ -241,7 +240,6 @@ pub fn do_swap_off_on() -> Result<()> {
 			.with_context(|| format!("Failed to run command `swapoff {device}`"))?;
 	}
 	
-	// do swap on
 	for device in &swap_devices {
 		println!("Running `swapon {device}`...");
 		Command::new("swapon")
