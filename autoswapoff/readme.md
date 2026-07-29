@@ -41,9 +41,9 @@ This is configured entirely through command-line arguments:
     --help | -h                                 Prints this help screen.
     --seconds-per-run <SECS>                    Sets how frequently this should check the current swap usage. Unit is seconds, default is 30.
     --swap-usage-needed <AMOUNT_MB>             This will not run swapoff/swapon unless the swap usage exceeds this amount. Unit is megabytes, default is 1024.
-    --stability-check-min-duration <DUR_SEC>    Once the 'swap usage' check passes, it starts tracking the ram usage for at least this long to make sure it isn't still being filled up. Unit is seconds, default is 15.
-    --stability-check-max-duration <DUR_SEC>    If the stability check lasts longer than this then the operation is aborted and the program will wait 3x this duration before doing another 'swap usage' check. Unit is seconds, default is 45.
+    --stability-check-min-duration <DUR_SEC>    Once the 'swap usage' check passes, it starts tracking the ram usage for at least this long to make sure it isn't still being filled up. Unit is seconds, default is 20.
+    --stability-check-max-duration <DUR_SEC>    If the stability check lasts longer than this then the operation is aborted and the program will wait 3x this duration before doing another 'swap usage' check. Unit is seconds, default is 60.
     --stability-check-interval <DUR_MS>         Sets how frequently the ram usage is checked during the stability check. Unit is milliseconds, default is 200.
-    --stability-check-look-ahead <DUR_SEC>      As the ram usage is tracked, an estimate is made for how full the ram will likely be several seconds later (by simply fitting a line to the tracked data), this sets how far ahead it estimates. Unit is seconds, default is 20.
+    --stability-check-look-ahead <DUR_SEC>      As the ram usage is tracked, an estimate is made for how full the ram will likely be several seconds later (by simply fitting a line to the tracked data), this sets how far ahead it estimates. Unit is seconds, default is 30.
     --excess-ram-needed <AMOUNT_MB>             This will not run swapoff/swapon unless the available ram exceeds the amount of data currently stored in swap by at least this amount. This applies for both the current ram usage and predicted ram usage. Unit is megabytes, default is 2048.
 ```
