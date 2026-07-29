@@ -13,5 +13,5 @@ where
 	args.next()
 		.ok_or_else(|| anyhow!("unexpected end of command arguments"))?
 		.parse()
-		.with_context(|| anyhow!("failed to parse '{}' argument", arg_name))
+		.with_context(|| anyhow!("failed to parse argument '{}'", arg_name))
 }

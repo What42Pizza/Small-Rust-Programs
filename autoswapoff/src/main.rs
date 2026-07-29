@@ -29,10 +29,10 @@ impl Default for ProgramSettings {
 			run_type: RunType::Looped,
 			seconds_per_run: 30,
 			swap_usage_needed: 1024 * 1024 * 1024,
-			stability_check_min_duration: 15,
-			stability_check_max_duration: 45,
+			stability_check_min_duration: 20,
+			stability_check_max_duration: 60,
 			stability_check_interval: 200,
-			stability_check_look_ahead: 20,
+			stability_check_look_ahead: 30,
 			excess_ram_needed: 2048 * 1024 * 1024,
 		}
 	}
@@ -52,15 +52,15 @@ fn main() -> Result<()> {
 	loop {
 		let Some(arg) = args.next() else { break; };
 		match &*arg {
-			"--once"                      => settings.run_type = RunType::Once,
-			"--help" | "-h"               => settings.run_type = RunType::Help,
-			"--seconds-per-run"              => { settings.seconds_per_run              = take_arg::<u64>(&mut args, "--seconds-per-run")?; }
-			"--swap-usage-needed"            => { settings.swap_usage_needed            = take_arg::<u64>(&mut args, "--swap-usage-needed")? * 1024 * 1024; }
-			"--stability-check-min-duration" => { settings.stability_check_min_duration = take_arg::<u64>(&mut args, "--stability-check-min-duration")?; }
-			"--stability-check-max-duration" => { settings.stability_check_max_duration = take_arg::<u64>(&mut args, "--stability-check-max-duration")?; }
-			"--stability-check-interval"     => { settings.stability_check_interval     = take_arg::<u64>(&mut args, "--stability-check-interval")?; }
-			"--stability-check-look-ahead"   => { settings.stability_check_look_ahead   = take_arg::<u64>(&mut args, "--stability-check-look-ahead")?; }
-			"--excess-ram-needed"            => { settings.excess_ram_needed            = take_arg::<u64>(&mut args, "--excess-ram-needed")? * 1024 * 1024; }
+			"--once"                         => settings.run_type = RunType::Once,
+			"--help" | "-h"                  => settings.run_type = RunType::Help,
+			"--seconds-per-run"              => settings.seconds_per_run              = take_arg::<u64>(&mut args, "--seconds-per-run")?,
+			"--swap-usage-needed"            => settings.swap_usage_needed            = take_arg::<u64>(&mut args, "--swap-usage-needed")? * 1024 * 1024,
+			"--stability-check-min-duration" => settings.stability_check_min_duration = take_arg::<u64>(&mut args, "--stability-check-min-duration")?,
+			"--stability-check-max-duration" => settings.stability_check_max_duration = take_arg::<u64>(&mut args, "--stability-check-max-duration")?,
+			"--stability-check-interval"     => settings.stability_check_interval     = take_arg::<u64>(&mut args, "--stability-check-interval")?,
+			"--stability-check-look-ahead"   => settings.stability_check_look_ahead   = take_arg::<u64>(&mut args, "--stability-check-look-ahead")?,
+			"--excess-ram-needed"            => settings.excess_ram_needed            = take_arg::<u64>(&mut args, "--excess-ram-needed")? * 1024 * 1024,
 			_ => eprintln!("Warning: unknown argument '{arg}'"),
 		}
 	}
@@ -88,10 +88,10 @@ fn main() -> Result<()> {
 			println!("    --help | -h                                 Prints this help screen.");
 			println!("    --seconds-per-run <SECS>                    Sets how frequently this should check the current swap usage. Unit is seconds, default is 30.");
 			println!("    --swap-usage-needed <AMOUNT_MB>             This will not run swapoff/swapon unless the swap usage exceeds this amount. Unit is megabytes, default is 1024.");
-			println!("    --stability-check-min-duration <DUR_SEC>    Once the 'swap usage' check passes, it starts tracking the ram usage for at least this long to make sure it isn't still being filled up. Unit is seconds, default is 15.");
-			println!("    --stability-check-max-duration <DUR_SEC>    If the stability check lasts longer than this then the operation is aborted and the program will wait 3x this duration before doing another 'swap usage' check. Unit is seconds, default is 45.");
+			println!("    --stability-check-min-duration <DUR_SEC>    Once the 'swap usage' check passes, it starts tracking the ram usage for at least this long to make sure it isn't still being filled up. Unit is seconds, default is 20.");
+			println!("    --stability-check-max-duration <DUR_SEC>    If the stability check lasts longer than this then the operation is aborted and the program will wait 3x this duration before doing another 'swap usage' check. Unit is seconds, default is 60.");
 			println!("    --stability-check-interval <DUR_MS>         Sets how frequently the ram usage is checked during the stability check. Unit is milliseconds, default is 200.");
-			println!("    --stability-check-look-ahead <DUR_SEC>      As the ram usage is tracked, an estimate is made for how full the ram will likely be several seconds later (by simply fitting a line to the tracked data), this sets how far ahead it estimates. Unit is seconds, default is 20.");
+			println!("    --stability-check-look-ahead <DUR_SEC>      As the ram usage is tracked, an estimate is made for how full the ram will likely be several seconds later (by simply fitting a line to the tracked data), this sets how far ahead it estimates. Unit is seconds, default is 30.");
 			println!("    --excess-ram-needed <AMOUNT_MB>             This will not run swapoff/swapon unless the available ram exceeds the amount of data currently stored in swap by at least this amount. This applies for both the current ram usage and predicted ram usage. Unit is megabytes, default is 2048.");
 			
 		}
@@ -146,7 +146,8 @@ pub fn run_once(settings: &ProgramSettings) -> Result<StabilizationPeriodExceede
 		let elapsed = tracking_start_time.elapsed();
 		if elapsed >= min_tracking_dur {
 			let (m, b) = fit_line(&mem_avail_list); // notice that mem_avail_list has had at least 2 push() calls before this
-			let predicted_mem_avail = m * (mem_avail_list.len() as f64 + look_ahead_count) + b;
+			let x = mem_avail_list.len() as f64 + look_ahead_count;
+			let predicted_mem_avail = m * x + b;
 			if mem_avail > swap_used + settings.excess_ram_needed && predicted_mem_avail > (swap_used + settings.excess_ram_needed) as f64 {
 				println!("Detected that ram usage has stabilized (current available ram is {} MB, predicted available ram is {} MB, current swap usage is {} MB), running swapoff/swapon...", mem_avail / (1024 * 1024), (predicted_mem_avail / (1024.0 * 1024.0)) as u64, swap_used / (1024 * 1024));
 				do_swap_off_on()?;

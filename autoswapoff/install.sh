@@ -3,6 +3,11 @@
 SERVICE_NAME="autoswapoff"
 BINARY_PATH="/usr/local/bin/$SERVICE_NAME"
 
+if [ "$EUID" -eq 0 ]; then
+    echo "This script must not be run as sudo, please re-run as \"./install\""
+    exit 1
+fi
+
 cd "$(dirname "$0")"
 set -e
 
