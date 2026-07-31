@@ -1,5 +1,23 @@
 #![feature(exit_status_error)]
 
+#![warn(clippy::all)]
+
+// release-build only checks, some of these are slightly unreasonable, but it does pass all these checks
+#![cfg_attr(not(debug_assertions), forbid(
+	unsafe_code,
+	unused_must_use,
+	unreachable_code,
+	unreachable_patterns,
+	clippy::unwrap_used,
+	clippy::expect_used,
+	clippy::panic,
+	clippy::todo,
+	clippy::unimplemented,
+	clippy::dbg_macro,
+	clippy::indexing_slicing,
+	clippy::mem_forget,
+))]
+
 
 
 pub use std::{path::Path, process::Command, str::FromStr, time::Duration, thread, time::Instant};
@@ -49,8 +67,7 @@ fn main() -> Result<()> {
 	let mut settings = ProgramSettings::default();
 	
 	let mut args = std::env::args().skip(1);
-	loop {
-		let Some(arg) = args.next() else { break; };
+	while let Some(arg) = args.next() {
 		match &*arg {
 			"--once"                         => settings.run_type = RunType::Once,
 			"--help" | "-h"                  => settings.run_type = RunType::Help,

@@ -14,6 +14,7 @@ set -e
 sudo systemctl stop "$SERVICE_NAME" || true
 
 echo "Building executable..."
+cargo clippy --release
 cargo build --release
 
 echo "Copying files..."
