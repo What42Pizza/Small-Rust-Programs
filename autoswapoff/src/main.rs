@@ -1,6 +1,13 @@
 #![feature(exit_status_error)]
 
-#![warn(clippy::all)]
+#![warn(
+	clippy::all,
+	clippy::nursery,
+	clippy::perf,
+)]
+#![allow(
+	clippy::suboptimal_flops
+)]
 
 // release-build only checks, some of these are slightly unreasonable, but it does pass all these checks
 #![cfg_attr(not(debug_assertions), forbid(
@@ -15,7 +22,9 @@
 	clippy::unimplemented,
 	clippy::dbg_macro,
 	clippy::indexing_slicing,
+	clippy::string_slice,
 	clippy::mem_forget,
+	clippy::unchecked_time_subtraction,
 ))]
 
 
@@ -148,7 +157,7 @@ pub fn run_once(settings: &ProgramSettings) -> Result<StabilizationPeriodExceede
 	if swap_used < settings.swap_usage_needed { return Ok(false); }
 	println!("Detected significant swap usage (current swap used: {} MB), starting ram usage tracking...", swap_used / (1024 * 1024));
 	
-	let mut mem_avail_list = vec!();
+	let mut mem_avail_list = vec![];
 	mem_avail_list.push(mem_avail);
 	let tracking_start_time = Instant::now();
 	let sleep_dur = Duration::from_millis(settings.stability_check_interval);
@@ -220,8 +229,8 @@ pub fn get_swap_used_and_mem_avail() -> Result<(u64, u64)> {
 	}
 	
 	fn extract_amount(line: Option<&str>, name: &str) -> Result<u64> {
-		let Some(line) = line else { bail!("Failed to find line \"{}\" in \"/proc/meminfo\"", name); };
-		let Some(amount_str) = line.split_whitespace().nth(1) else { bail!("Failed to find amount within line \"{}\"", line); };
+		let Some(line) = line else { bail!("Failed to find line \"{name}\" in \"/proc/meminfo\""); };
+		let Some(amount_str) = line.split_whitespace().nth(1) else { bail!("Failed to find amount within line \"{line}\""); };
 		amount_str.parse().with_context(|| format!("Failed to parse data in line \"{line}\" (stripped as \"{amount_str}\")"))
 	}
 	let mem_avail  = extract_amount(mem_avail_line , "MemAvailable")? * 1024;
